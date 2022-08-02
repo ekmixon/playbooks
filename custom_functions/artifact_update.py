@@ -19,9 +19,9 @@ def artifact_update(artifact_id=None, name=None, label=None, severity=None, cef_
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
+
     updated_artifact = {}
-    
+
     if not isinstance(artifact_id, int):
         raise TypeError("artifact_id is required")
 
@@ -41,24 +41,30 @@ def artifact_update(artifact_id=None, name=None, label=None, severity=None, cef_
         updated_artifact['cef'] = {cef_field: cef_value}
         if cef_data_type and isinstance(cef_data_type, str):
             updated_artifact['cef_types'] = {cef_field: [cef_data_type]}
-    
+
     # separate tags by comma
     if tags:
         tags = tags.replace(" ", "").split(",")
         updated_artifact['tags'] = tags
-    
+
     if input_json:
         json_dict = json.loads(input_json)
         # Merge dictionaries, using the value from json_dict if there are any conflicting keys
         for json_key in json_dict:
             updated_artifact[json_key] = json_dict[json_key]
-    
+
     # now actually update the artifact
-    phantom.debug('updating artifact {} with the following attributes:\n{}'.format(artifact_id, updated_artifact))
+    phantom.debug(
+        f'updating artifact {artifact_id} with the following attributes:\n{updated_artifact}'
+    )
+
     url = phantom.build_phantom_rest_url('artifact', artifact_id)
     response = phantom.requests.post(url, json=updated_artifact, verify=False).json()
 
-    phantom.debug('POST /rest/artifact returned the following response:\n{}'.format(response))
+    phantom.debug(
+        f'POST /rest/artifact returned the following response:\n{response}'
+    )
+
     if 'success' not in response or response['success'] != True:
         raise RuntimeError("POST /rest/artifact failed")
 

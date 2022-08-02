@@ -126,16 +126,16 @@ def ip_intel_source_address(action=None, success=None, container=None, results=N
     # collect data for 'ip_intel_source_address' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_hash_and_ip:condition_1:artifact:*.cef.sourceAddress', 'filtered-data:filter_hash_and_ip:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_intel_source_address' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip intelligence", parameters=parameters, assets=['recorded_future'], name="ip_intel_source_address")
 
@@ -150,16 +150,16 @@ def ip_intel_destination_address(action=None, success=None, container=None, resu
     # collect data for 'ip_intel_destination_address' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_hash_and_ip:condition_2:artifact:*.cef.destinationAddress', 'filtered-data:filter_hash_and_ip:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_intel_destination_address' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip intelligence", parameters=parameters, assets=['recorded_future'], name="ip_intel_destination_address")
 
@@ -174,16 +174,16 @@ def file_intelligence_1(action=None, success=None, container=None, results=None,
     # collect data for 'file_intelligence_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_hash_and_ip:condition_3:artifact:*.cef.fileHash', 'filtered-data:filter_hash_and_ip:condition_3:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'file_intelligence_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'hash': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="file intelligence", parameters=parameters, assets=['recorded_future'], name="file_intelligence_1")
 
@@ -198,16 +198,16 @@ def domain_intel_source_dns(action=None, success=None, container=None, results=N
     # collect data for 'domain_intel_source_dns' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_domain_and_url:condition_3:artifact:*.cef.sourceDnsDomain', 'filtered-data:filter_domain_and_url:condition_3:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_intel_source_dns' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="domain intelligence", parameters=parameters, assets=['recorded_future'], name="domain_intel_source_dns")
 
@@ -222,16 +222,16 @@ def domain_intel_dest_dns(action=None, success=None, container=None, results=Non
     # collect data for 'domain_intel_dest_dns' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_domain_and_url:condition_1:artifact:*.cef.destinationDnsDomain', 'filtered-data:filter_domain_and_url:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_intel_dest_dns' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="domain intelligence", parameters=parameters, assets=['recorded_future'], name="domain_intel_dest_dns")
 
@@ -246,16 +246,16 @@ def url_intelligence_1(action=None, success=None, container=None, results=None, 
     # collect data for 'url_intelligence_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_domain_and_url:condition_2:artifact:*.cef.requestURL', 'filtered-data:filter_domain_and_url:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'url_intelligence_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="url intelligence", parameters=parameters, assets=['recorded_future'], name="url_intelligence_1")
 

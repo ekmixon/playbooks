@@ -24,18 +24,18 @@ def unblock_ip(action=None, success=None, container=None, results=None, handle=N
     # collect data for 'unblock_ip' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.dvc', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'unblock_ip' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                'vsys': "vsys1",
-                'is_source_address': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            'vsys': "vsys1",
+            'is_source_address': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="unblock ip", parameters=parameters, assets=['pan'], name="unblock_ip")
 
@@ -50,18 +50,18 @@ def block_ip(action=None, success=None, container=None, results=None, handle=Non
     # collect data for 'block_ip' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.dvc', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_ip' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                'vsys': "vsys1",
-                'is_source_address': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            'vsys': "vsys1",
+            'is_source_address': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], name="block_ip")
 
@@ -73,15 +73,12 @@ Use the custom string provided by Vectra to determine if the detected device is 
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["virtual", "in", "artifact:*.cef.cs1"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         snapshot_vm_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -99,17 +96,17 @@ def snapshot_vm_1(action=None, success=None, container=None, results=None, handl
     # collect data for 'snapshot_vm_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.cs2', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'snapshot_vm_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'download': True,
-                'vmx_path': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'download': True,
+            'vmx_path': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="snapshot vm", parameters=parameters, assets=['vmwarevsphere'], callback=decision_3, name="snapshot_vm_1")
 
@@ -121,16 +118,13 @@ Use the category provided by Vectra to determine if the detected threat has been
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["artifact:*.cef.category", "==", "lateral"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         suspend_vm_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -141,23 +135,23 @@ Immediately suspend the virtual machine to prevent further damage.
 """
 def suspend_vm_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('suspend_vm_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'suspend_vm_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['snapshot_vm_1:action_result.parameter.vmx_path', 'snapshot_vm_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'suspend_vm_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'download': False,
-                'vmx_path': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'download': False,
+            'vmx_path': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="suspend vm", parameters=parameters, assets=['vmwarevsphere'], name="suspend_vm_1")
 
@@ -168,31 +162,25 @@ Determine whether the Vectra request specifies a block or an unblock.
 """
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
-    
+
     source_data_identifier_value = container.get('source_data_identifier', None)
     source_data_identifier_value = container.get('source_data_identifier', None)
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["vectra_block_request", "in", source_data_identifier_value],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         decision_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["vectra_unblock_request", "in", source_data_identifier_value],
-        ])
-
-    # call connected blocks if condition 2 matched
-    if matched:
+        ],
+    ):
         unblock_ip(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 

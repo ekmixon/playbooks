@@ -64,17 +64,17 @@ def parse_and_save_iwlist(iwlist):
 
 def parse_and_save_live_case(live_case_body):
     phantom.debug('parsing the id of the live case to update')
-    
+
     phantom.debug(live_case_body)
-    
+
     live_case_id = live_case_body[0][0]['data'][0]['id']
-    phantom.debug('tracking wireless scans in the case with id {}'.format(live_case_id))
+    phantom.debug(f'tracking wireless scans in the case with id {live_case_id}')
     phantom.save_run_data(value=str(live_case_id), key='live_case_id')
-    
+
     live_case_owner = live_case_body[0][0]['data'][0]['owner_name']
-    phantom.debug('this case is owned by {}'.format(live_case_owner))
+    phantom.debug(f'this case is owned by {live_case_owner}')
     phantom.save_run_data(value=json.dumps(live_case_owner), key='live_case_owner')
-    
+
     return
 
 # write a one-line comment to the activity feed
@@ -87,10 +87,10 @@ def edit_distance(s1, s2):
 
     # ignore non-letters and upper-case vs lower-case
     s1 = s1.lower()
-    s1 = re.sub(r'[^a-z]', '', s1) 
+    s1 = re.sub(r'[^a-z]', '', s1)
     s2 = s2.lower()
     s2 = re.sub(r'[^a-z]', '', s2) 
-    
+
     # ignore the potential usage of some generic terms
     for generic in ['wifi', 'wireless', 'network', 'official', 'corp', 'corporate']:
         s1 = re.sub(generic, '', s1) 
@@ -107,8 +107,7 @@ def edit_distance(s1, s2):
     distances = range(len(s2) + 1)
     # iterate through each character in s1
     for i in range(len(s1)):
-        next_distances = []
-        next_distances.append(i + 1)
+        next_distances = [i + 1]
         # iterate through each character in s2
         for j in range(len(s2)):
             # insert a new character
@@ -180,11 +179,11 @@ In this case we are not pursuing further investigation of WPA2 networks that mat
 """
 def check_allowlist(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('check_allowlist() called')
-    
+
     parsed_access_points = json.loads(phantom.get_run_data(key='parsed_access_points'))
-    
+
     success, message, allowlist = phantom.get_list(list_name='Example Company WiFi ESSID Allowlist')
-    
+
     allowlist_filtered_access_points = [
         ap for ap in parsed_access_points 
         if (
@@ -196,14 +195,15 @@ def check_allowlist(action=None, success=None, container=None, results=None, han
         )
     ]
 
-    message = 'out of the {} access points identified by the scan, {} matched the allowlist and are being ignored'.format(len(parsed_access_points), len(parsed_access_points) - len(allowlist_filtered_access_points))
+    message = f'out of the {len(parsed_access_points)} access points identified by the scan, {len(parsed_access_points) - len(allowlist_filtered_access_points)} matched the allowlist and are being ignored'
+
     phantom.debug(message)
     live_comment(message)
-    
+
     phantom.save_run_data(value=json.dumps(allowlist_filtered_access_points), key='allowlist_filtered_access_points')
-    
+
     check_potential_list() 
-    
+
     return
 
 """
@@ -211,20 +211,20 @@ Retrieve a list of all the cards currently pinned to the Heads-up Display of the
 """
 def get_pins(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_pins() called')
-    
+
     live_case = phantom.get_run_data(key='live_case_id')
-    
-    parameters = []
-    
-    # build the container_pin filter url using the live case id
-    parameters.append({
-        'location': "/rest/container_pin?page_size=0&_filter_container=" + live_case,
-        'verify_certificate': False,
-        'headers': "",
-    })
+
+    parameters = [
+        {
+            'location': f"/rest/container_pin?page_size=0&_filter_container={live_case}",
+            'verify_certificate': False,
+            'headers': "",
+        }
+    ]
+
 
     phantom.act("get data", parameters=parameters, assets=['http'], callback=update_case, name="get_pins")    
-    
+
     return
 
 """
@@ -252,14 +252,14 @@ def find_case(action=None, success=None, container=None, results=None, handle=No
 
     # collect data for 'find_case' call
 
-    parameters = []
-    
-    # build parameters list for 'find_case' call
-    parameters.append({
-        'headers': "",
-        'location': "rest/container?_filter_label=\"wireless\"&_filter_container_type=\"case\"&sort=start_time&order=desc&page_size=1",
-        'verify_certificate': False,
-    })
+    parameters = [
+        {
+            'headers': "",
+            'location': "rest/container?_filter_label=\"wireless\"&_filter_container_type=\"case\"&sort=start_time&order=desc&page_size=1",
+            'verify_certificate': False,
+        }
+    ]
+
 
     phantom.act(action="get data", parameters=parameters, assets=['http'], callback=join_collect_data, name="find_case")
 
@@ -272,14 +272,14 @@ The resulting artifact saved to the Case will have a field called "matched_rule"
 """
 def check_potential_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('check_potential_list() called')
-    
+
     edit_distance_threshold = 5
-    
+
     success, message, potentials = phantom.get_list(list_name='Potential Rogue Access Point ESSIDs')
     allowlist_filtered_access_points = json.loads(phantom.get_run_data(key='allowlist_filtered_access_points'))
-    
+
     scanned_ESSIDs = [ap['ESSID'] for ap in allowlist_filtered_access_points]
-    
+
     # compare each ESSID against each potential evil twin and escalate those with a sufficiently small edit distance
     matches = 0
     for ap in allowlist_filtered_access_points:
@@ -292,15 +292,15 @@ def check_potential_list(action=None, success=None, container=None, results=None
                 matches += 1
                 break
 
-    message = '{} out of {} access points fuzzy-matched "Potential Rogue Access Point ESSIDs"'.format(
-        matches, len(allowlist_filtered_access_points))
+    message = f'{matches} out of {len(allowlist_filtered_access_points)} access points fuzzy-matched "Potential Rogue Access Point ESSIDs"'
+
     phantom.debug(message)
     live_comment(message)
 
     phantom.save_run_data(value=json.dumps(allowlist_filtered_access_points), key='fuzzy_matched_access_points')
 
     get_pins()
-    
+
     return
 
 """
@@ -313,14 +313,14 @@ def execute_program_1(action=None, success=None, container=None, results=None, h
 
     # collect data for 'execute_program_1' call
 
-    parameters = []
-    
-    # build parameters list for 'execute_program_1' call
-    parameters.append({
-        'command': "sudo /sbin/iwlist wlan0 scanning",
-        'timeout': "",
-        'ip_hostname': "192.168.1.100",
-    })
+    parameters = [
+        {
+            'command': "sudo /sbin/iwlist wlan0 scanning",
+            'timeout': "",
+            'ip_hostname': "192.168.1.100",
+        }
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['raspberry_pi_ssh'], callback=join_collect_data, name="execute_program_1")
 
@@ -365,15 +365,16 @@ Assign a manual task for an operator to remediate. The HUD can be used to live-t
 """
 def find_and_disable_rogue_ap(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('find_and_disable() called')
-    
+
     live_case_id = phantom.get_run_data(key='live_case_id')
-    
+
     # set user and message variables for phantom.task call
     user = "admin"
-    message = "Walk around the office with the Raspberry Pi. Use the MAC addresses and signal strengths on the Heads-up Display of Case #{} to find the potential rogue access points. For each one, consider doing a packet capture to find other devices that are connecting to it. Also consider unplugging it, placing it in a faraday cage, and bringing it back to the security operations center for further forensic analysis.".format(live_case_id)
+    message = f"Walk around the office with the Raspberry Pi. Use the MAC addresses and signal strengths on the Heads-up Display of Case #{live_case_id} to find the potential rogue access points. For each one, consider doing a packet capture to find other devices that are connecting to it. Also consider unplugging it, placing it in a faraday cage, and bringing it back to the security operations center for further forensic analysis."
+
 
     phantom.task(user=user, message=message, respond_in_mins=30, name="find_and_disable_rogue_ap")
-    
+
     # set the case owner to the same user
     phantom.set_owner(container=int(live_case_id), user=user)
 

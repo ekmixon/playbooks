@@ -30,7 +30,7 @@ Uses custom python to parse out the relevant fields from the Patient 0 alert ema
 """
 def parse_email_to_artifact(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('parse_email_to_artifact() called')
-    
+
     input_parameter_0 = ""
 
     ################################################################################
@@ -44,27 +44,27 @@ def parse_email_to_artifact(action=None, success=None, container=None, results=N
         'Threat Name': 'threatName',
         'Transactions involving this content': 'eventLink'
     }
-    
+
     # the full content of the email  is outside any artifact in the container['data'] field
     raw_data = phantom.get_raw_data(container)
-    
+
     # build regular expressions to parse the Zscaler-specific email format
     allowed_re = re.compile(r"(?<=allowed )[0-9]+")
     quarantined_re = re.compile(r"(?<=quarantined )[0-9]+")
     blocked_re = re.compile(r"(?<=blocked )[0-9]+")
-    
+
     cef={}
     raw={}
-    
+
     # the content may or may not be base64 encoded so handle both
     base64index = raw_data.find('base64\\r\\n\\r\\n')
     phantom.debug(base64index)
     if base64index != -1:
         raw_data = raw_data[base64index+14:]
         raw_data = raw_data[:raw_data.find('\\r\\n\\r\\n')].replace('\\r\\n','\r\n')
-    
+
         raw_data = base64.b64decode(raw_data)
-    
+
         for line in raw_data.split('\n'):
             kv_pair = line.split(":")
             phantom.debug(str(kv_pair))
@@ -79,10 +79,9 @@ def parse_email_to_artifact(action=None, success=None, container=None, results=N
                     cef['timesQuarantined'] = quarantined_re.findall(kv_pair[1])[0]
                     cef['timesBlocked'] = blocked_re.findall(kv_pair[1])[0]
 
-    # if there is no base64, try to parse as plain text using regexes
     else:
-        for field_label in FIELD_TRANSLATOR.keys():
-            field_re = re.compile(r"{}:[ \\r\\n]+(.*?)\\r\\n".format(field_label))
+        for field_label in FIELD_TRANSLATOR:
+            field_re = re.compile(f"{field_label}:[ \r\n]+(.*?)\r\n")
             re_result = field_re.findall(raw_data)
             if re_result:
                 field_value = re_result[0]
@@ -91,18 +90,15 @@ def parse_email_to_artifact(action=None, success=None, container=None, results=N
             re_result = re.findall(r"First downloaded: (.*?)\.", raw_data)
             if re_result and len(re_result[0]) < 200:
                 cef['startTime'] = re_result[0]
-            re_result = allowed_re.findall(raw_data)
-            if re_result:
+            if re_result := allowed_re.findall(raw_data):
                 cef['timesAllowed'] = re_result[0]
-            re_result = quarantined_re.findall(raw_data)
-            if re_result:
+            if re_result := quarantined_re.findall(raw_data):
                 cef['timesQuarantined'] = re_result[0]
-            re_result = blocked_re.findall(raw_data)
-            if re_result:
+            if re_result := blocked_re.findall(raw_data):
                 cef['timesBlocked'] = re_result[0]
 
     success, message, container_id = phantom.create_container(name=container['name'], label='events')
-    
+
     phantom.add_artifact(container=container_id, raw_data=raw, cef_data=cef, label='event', name='zScaler Alert Artifact', severity = 'medium', identifier=str(uuid.uuid4()), artifact_type='network')
 
     ################################################################################

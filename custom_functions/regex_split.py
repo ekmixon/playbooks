@@ -14,26 +14,21 @@ def regex_split(input_string=None, regex=None, strip_whitespace=None, **kwargs):
     import json
     import phantom.rules as phantom
     import re
-    
-    outputs = []
-    
+
     # strip_whitespace defaults to True, but if any value besides "True" is provided, it will be set to False
-    if strip_whitespace == None or strip_whitespace.lower() == 'true':
-        strip_whitespace = True
-    else:
-        strip_whitespace = False
-    
+    strip_whitespace = (
+        strip_whitespace is None or strip_whitespace.lower() == 'true'
+    )
+
     regex = regex.replace('\\\\','\\')
     results = re.split(regex, input_string)
-    
+
     if strip_whitespace:
         results = [result.strip() for result in results]
 
-    phantom.debug("the input string {} was split into {}".format(input_string, results))
+    phantom.debug(f"the input string {input_string} was split into {results}")
 
-    for result in results:
-        outputs.append({'item': result})
-    
+    outputs = [{'item': result} for result in results]
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable
     return outputs

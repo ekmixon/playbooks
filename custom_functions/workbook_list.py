@@ -16,26 +16,29 @@ def workbook_list(**kwargs):
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
-    outputs = []
+
     url = phantom.build_phantom_rest_url('workbook_template') + '?page_size=0'
     phantom.debug(f"Querying for workbooks using URL: '{url}'")
-    
+
     response = phantom.requests.get(uri=url, verify=False).json()
-    if response and response['count'] > 0:
-        for data in response['data']:
-            outputs.append({"id": data['id'],
-                            "name": data['name'],
-                            "description": data['description'],
-                            "status": data['status'],
-                            "is_default": data['is_default'],
-                            "is_note_required": data['is_note_required'],
-                            "creator": data['creator'],
-                            "create_time": data['create_time'],
-                            "modified_time": data['modified_time']})
-    else:
+    if not response or response['count'] <= 0:
         raise RuntimeError(f"Error getting workbook data: {response}") 
-    
+
+    outputs = [
+        {
+            "id": data['id'],
+            "name": data['name'],
+            "description": data['description'],
+            "status": data['status'],
+            "is_default": data['is_default'],
+            "is_note_required": data['is_note_required'],
+            "creator": data['creator'],
+            "create_time": data['create_time'],
+            "modified_time": data['modified_time'],
+        }
+        for data in response['data']
+    ]
+
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable
     return outputs

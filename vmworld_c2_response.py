@@ -30,18 +30,19 @@ Use custom thresholds to categorize high and low severity events based on the IP
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["ip_reputation:action_result.data.*.detected_urls.*.positives", ">=", 15],
+            [
+                "ip_reputation:action_result.data.*.detected_urls.*.positives",
+                ">=",
+                15,
+            ],
             ["ip_reputation:action_result.data.*.threatscore", ">=", 60],
         ],
-        logical_operator='or')
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        logical_operator='or',
+    ):
         set_severity_high(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -66,23 +67,23 @@ Now that our Virustotal threshold has classified the file as malicious we will u
 """
 def block_hash(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_hash() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_hash' call
     results_data_1 = phantom.collect2(container=container, datapath=['file_reputation:action_result.parameter.hash', 'file_reputation:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'block_hash' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'hash': results_item_1[0],
-                'comment': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': results_item_1[0],
+            'comment': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="block hash", parameters=parameters, assets=['carbonblack'], name="block_hash")
 
@@ -94,16 +95,13 @@ Only proceed if 20 or more detection engines in Virustotal classified the file a
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["file_reputation:action_result.summary.positives", ">=", 20],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         block_hash(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -149,16 +147,16 @@ def file_reputation(action=None, success=None, container=None, results=None, han
     # collect data for 'file_reputation' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fileHashMd5', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'hash': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="file reputation", parameters=parameters, assets=['virustotal'], callback=file_reputation_callback, name="file_reputation")
 
@@ -177,23 +175,23 @@ Take snapshots of the detected virtual machines in case they are needed for fore
 """
 def snapshot_vm_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('snapshot_vm_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'snapshot_vm_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_4:condition_1:list_vms_1:action_result.data.*.vmx_path", "filtered-data:filter_4:condition_1:list_vms_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'snapshot_vm_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'download': "",
-                'vmx_path': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'download': "",
+            'vmx_path': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="snapshot vm", parameters=parameters, assets=['vmwarevsphere'], name="snapshot_vm_1")
 
@@ -219,17 +217,17 @@ def hunt_file_md5(action=None, success=None, container=None, results=None, handl
     # collect data for 'hunt_file_md5' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fileHashMd5', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_file_md5' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'hash': filtered_artifacts_item_1[0],
-                'max_threat_count': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': filtered_artifacts_item_1[0],
+            'max_threat_count': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="hunt file", parameters=parameters, assets=['phishme'], name="hunt_file_md5")
 
@@ -244,17 +242,17 @@ def hunt_ip_1(action=None, success=None, container=None, results=None, handle=No
     # collect data for 'hunt_ip_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_ip_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'max_threat_count': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'max_threat_count': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="hunt ip", parameters=parameters, assets=['phishme'], name="hunt_ip_1")
 
@@ -281,19 +279,19 @@ def hunt_file_sha256(action=None, success=None, container=None, results=None, ha
     # collect data for 'hunt_file_sha256' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.fileHashSha256', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_file_sha256' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ph': "",
-                'hash': filtered_artifacts_item_1[0],
-                'end_time': "",
-                'start_time': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ph': "",
+            'hash': filtered_artifacts_item_1[0],
+            'end_time': "",
+            'start_time': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="hunt file", parameters=parameters, assets=['protectwise'], name="hunt_file_sha256")
 
@@ -370,16 +368,16 @@ def ip_reputation(action=None, success=None, container=None, results=None, handl
     # collect data for 'ip_reputation' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], callback=ip_reputation_callback, name="ip_reputation")
 
@@ -420,16 +418,17 @@ Only proceed for IP's that resolved to 15 or more positives.
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["ip_reputation:action_result.data.*.detected_urls.*.positives", ">=", 15],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "ip_reputation:action_result.data.*.detected_urls.*.positives",
+                ">=",
+                15,
+            ],
+        ],
+    ):
         NSX_block_IP(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -440,22 +439,22 @@ Now that we have determined that an IP is probably malicious we can add an NSX r
 """
 def NSX_block_IP(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('NSX_block_IP() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'NSX_block_IP' call
     results_data_1 = phantom.collect2(container=container, datapath=['ip_reputation:action_result.data.*.ip', 'ip_reputation:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'NSX_block_IP' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['vmwarensx'], name="NSX_block_IP")
 

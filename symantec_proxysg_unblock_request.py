@@ -65,16 +65,16 @@ def virustotal_url_reputation(action=None, success=None, container=None, results
     # collect data for 'virustotal_url_reputation' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.requestURL', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'virustotal_url_reputation' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="url reputation", parameters=parameters, assets=['virustotal'], callback=format_deny_email, name="virustotal_url_reputation")
 
@@ -83,29 +83,23 @@ def virustotal_url_reputation(action=None, success=None, container=None, results
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.response", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         allow_url_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.response", "==", "No"],
-        ])
-
-    # call connected blocks if condition 2 matched
-    if matched:
+        ],
+    ):
         send_deny_email_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -113,7 +107,7 @@ def decision_2(action=None, success=None, container=None, results=None, handle=N
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Administrator"
     message = """A user is requesting to unblock the website at URL: 
@@ -146,23 +140,23 @@ Reputation services have not indicated that this site is malicious.  Additional 
 
 def get_screenshot_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_screenshot_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_screenshot_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.requestURL', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'get_screenshot_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                'size': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            'size': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="get screenshot", parameters=parameters, assets=['screenshot machine'], callback=detonate_url_1, name="get_screenshot_1")
 
@@ -171,16 +165,17 @@ def get_screenshot_1(action=None, success=None, container=None, results=None, ha
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["virustotal_url_reputation:action_result.summary.positives", "==", 0],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "virustotal_url_reputation:action_result.summary.positives",
+                "==",
+                0,
+            ],
+        ],
+    ):
         webpulse_url_reputation(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -191,22 +186,22 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 
 def webpulse_url_reputation(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('webpulse_url_reputation() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'webpulse_url_reputation' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.requestURL', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'webpulse_url_reputation' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="url reputation", parameters=parameters, assets=['blue_coat'], callback=decision_3, name="webpulse_url_reputation")
 
@@ -215,29 +210,31 @@ def webpulse_url_reputation(action=None, success=None, container=None, results=N
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["Malicious", "in", "webpulse_url_reputation:action_result.data.*.categories"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "Malicious",
+                "in",
+                "webpulse_url_reputation:action_result.data.*.categories",
+            ],
+        ],
+    ):
         join_send_deny_email_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["Malware", "in", "webpulse_url_reputation:action_result.data.*.categories"],
-        ])
-
-    # call connected blocks if condition 2 matched
-    if matched:
+            [
+                "Malware",
+                "in",
+                "webpulse_url_reputation:action_result.data.*.categories",
+            ],
+        ],
+    ):
         join_send_deny_email_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -248,23 +245,23 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 
 def detonate_url_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('detonate_url_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'detonate_url_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.requestURL', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'detonate_url_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                'private': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            'private': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="detonate url", parameters=parameters, assets=['urlscan'], callback=prompt_1, name="detonate_url_1", parent_action=action)
 
@@ -272,22 +269,22 @@ def detonate_url_1(action=None, success=None, container=None, results=None, hand
 
 def allow_url_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('allow_url_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'allow_url_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.requestURL', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'allow_url_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'url': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="allow url", parameters=parameters, assets=['blue_coat'], callback=send_approve_email, name="allow_url_1")
 
@@ -295,30 +292,30 @@ def allow_url_1(action=None, success=None, container=None, results=None, handle=
 
 def send_deny_email_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_deny_email_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_deny_email_2' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fromEmail', 'filtered-data:filter_2:condition_1:artifact:*.id'])
     formatted_data_1 = phantom.get_format_data(name='format_deny_email')
 
-    parameters = []
-    
-    # build parameters list for 'send_deny_email_2' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'cc': "",
-                'to': filtered_artifacts_item_1[0],
-                'bcc': "",
-                'body': formatted_data_1,
-                'from': "phantom-notifications@company.com",
-                'headers': "",
-                'subject': "Request Denied",
-                'attachments': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'cc': "",
+            'to': filtered_artifacts_item_1[0],
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "phantom-notifications@company.com",
+            'headers': "",
+            'subject': "Request Denied",
+            'attachments': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=join_update_ticket_denied, name="send_deny_email_2")
 
@@ -344,29 +341,29 @@ def join_send_deny_email_2(action=None, success=None, container=None, results=No
 
 def send_deny_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_deny_email_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_deny_email_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fromEmail', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'send_deny_email_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'cc': "",
-                'to': filtered_artifacts_item_1[0],
-                'bcc': "",
-                'body': "Your request has been denied by an approver. ",
-                'from': "phantom-notifications@company.com",
-                'headers': "",
-                'subject': "Request Denied",
-                'attachments': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'cc': "",
+            'to': filtered_artifacts_item_1[0],
+            'bcc': "",
+            'body': "Your request has been denied by an approver. ",
+            'from': "phantom-notifications@company.com",
+            'headers': "",
+            'subject': "Request Denied",
+            'attachments': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=join_update_ticket_denied, name="send_deny_email_1")
 
@@ -374,29 +371,29 @@ def send_deny_email_1(action=None, success=None, container=None, results=None, h
 
 def send_approve_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_approve_email() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_approve_email' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fromEmail', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'send_approve_email' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'cc': "",
-                'to': filtered_artifacts_item_1[0],
-                'bcc': "",
-                'body': "Your request to unblock a website has been approved. ",
-                'from': "phantom-notifications@company.com",
-                'headers': "",
-                'subject': "Request Approved",
-                'attachments': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'cc': "",
+            'to': filtered_artifacts_item_1[0],
+            'bcc': "",
+            'body': "Your request to unblock a website has been approved. ",
+            'from': "phantom-notifications@company.com",
+            'headers': "",
+            'subject': "Request Approved",
+            'attachments': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=update_ticket_approved, name="send_approve_email", parent_action=action)
 
@@ -404,21 +401,21 @@ def send_approve_email(action=None, success=None, container=None, results=None, 
 
 def update_ticket_approved(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('update_ticket_approved() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     name_value = container.get('name', None)
 
     # collect data for 'update_ticket_approved' call
 
-    parameters = []
-    
-    # build parameters list for 'update_ticket_approved' call
-    parameters.append({
-        'id': name_value,
-        'vault_id': "",
-        'update_fields': "{\"update\": {\"comment\": [{\"add\": {\"body\": \"Request Approved\"}}]}}",
-    })
+    parameters = [
+        {
+            'id': name_value,
+            'vault_id': "",
+            'update_fields': "{\"update\": {\"comment\": [{\"add\": {\"body\": \"Request Approved\"}}]}}",
+        }
+    ]
+
 
     phantom.act(action="update ticket", parameters=parameters, assets=['jira'], name="update_ticket_approved", parent_action=action)
 
@@ -426,21 +423,21 @@ def update_ticket_approved(action=None, success=None, container=None, results=No
 
 def update_ticket_denied(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('update_ticket_denied() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     name_value = container.get('name', None)
 
     # collect data for 'update_ticket_denied' call
 
-    parameters = []
-    
-    # build parameters list for 'update_ticket_denied' call
-    parameters.append({
-        'id': name_value,
-        'vault_id': "",
-        'update_fields': "{\"update\": {\"comment\": [{\"add\": {\"body\": \"Request Denied\"}}]}}",
-    })
+    parameters = [
+        {
+            'id': name_value,
+            'vault_id': "",
+            'update_fields': "{\"update\": {\"comment\": [{\"add\": {\"body\": \"Request Denied\"}}]}}",
+        }
+    ]
+
 
     phantom.act(action="update ticket", parameters=parameters, assets=['jira'], name="update_ticket_denied")
 
@@ -466,7 +463,7 @@ def join_update_ticket_denied(action=None, success=None, container=None, results
 
 def format_deny_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_deny_email() called')
-    
+
     template = """Your request to unblock a website has been denied.
 
 The website at: 

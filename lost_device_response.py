@@ -33,22 +33,22 @@ def join_set_status_1(action=None, success=None, container=None, results=None, h
 
 def reset_password_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_password_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'reset_password_2' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_3:condition_2:get_user_attributes_1:action_result.parameter.username", "filtered-data:filter_3:condition_2:get_user_attributes_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'reset_password_2' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'username': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="reset password", parameters=parameters, assets=['domainctrl1'], callback=executive_reset, name="reset_password_2")
 
@@ -59,13 +59,7 @@ def list_mobile_devices(action=None, success=None, container=None, results=None,
 
     # collect data for 'list_mobile_devices' call
 
-    parameters = []
-    
-    # build parameters list for 'list_mobile_devices' call
-    parameters.append({
-        'limit': 500000,
-        'start_index': 1,
-    })
+    parameters = [{'limit': 500000, 'start_index': 1}]
 
     phantom.act(action="list devices", parameters=parameters, assets=['mobileiron'], callback=filter_1, name="list_mobile_devices")
 
@@ -104,23 +98,23 @@ def filter_3(action=None, success=None, container=None, results=None, handle=Non
 
 def lock_device_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('lock_device_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'lock_device_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:list_mobile_devices:action_result.data.*.uuid", "filtered-data:filter_1:condition_1:list_mobile_devices:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'lock_device_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'uuid': filtered_results_item_1[0],
-                'reason': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'uuid': filtered_results_item_1[0],
+            'reason': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="lock device", parameters=parameters, assets=['mobileiron'], callback=get_user_attributes_1, name="lock_device_1")
 
@@ -128,22 +122,22 @@ def lock_device_1(action=None, success=None, container=None, results=None, handl
 
 def reset_password_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_password_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'reset_password_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_3:condition_1:get_user_attributes_1:action_result.parameter.username", "filtered-data:filter_3:condition_1:get_user_attributes_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'reset_password_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'username': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="reset password", parameters=parameters, assets=['domainctrl1'], callback=non_executive_reset, name="reset_password_1")
 
@@ -151,22 +145,22 @@ def reset_password_1(action=None, success=None, container=None, results=None, ha
 
 def create_ticket_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_2' call
     formatted_data_1 = phantom.get_format_data(name='executive_reset')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_2' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Lost/Stolen Mobile Device",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Lost/Stolen Mobile Device",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_set_status_1, name="create_ticket_2")
 
@@ -175,29 +169,23 @@ def create_ticket_2(action=None, success=None, container=None, results=None, han
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", 1],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         reset_password_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", 2],
-        ])
-
-    # call connected blocks if condition 2 matched
-    if matched:
+        ],
+    ):
         not_reset(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -205,7 +193,7 @@ def decision_2(action=None, success=None, container=None, results=None, handle=N
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """The following user has lost his/her device: 
@@ -259,22 +247,22 @@ def filter_1(action=None, success=None, container=None, results=None, handle=Non
 
 def create_ticket_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_3() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_3' call
     formatted_data_1 = phantom.get_format_data(name='non_executive_reset')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_3' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Lost/Stolen Mobile Device",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Lost/Stolen Mobile Device",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_set_status_1, name="create_ticket_3")
 
@@ -282,22 +270,22 @@ def create_ticket_3(action=None, success=None, container=None, results=None, han
 
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
     formatted_data_1 = phantom.get_format_data(name='not_reset')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Lost/Stolen Mobile Device",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Lost/Stolen Mobile Device",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_set_status_1, name="create_ticket_1")
 
@@ -305,24 +293,24 @@ def create_ticket_1(action=None, success=None, container=None, results=None, han
 
 def get_user_attributes_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_user_attributes_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_user_attributes_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:list_mobile_devices:action_result.data.*.userId", "filtered-data:filter_1:condition_1:list_mobile_devices:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'get_user_attributes_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'fields': "",
-                'username': filtered_results_item_1[0],
-                'attribute': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'fields': "",
+            'username': filtered_results_item_1[0],
+            'attribute': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="get user attributes", parameters=parameters, assets=['domainctrl1'], callback=filter_3, name="get_user_attributes_1", parent_action=action)
 
@@ -333,7 +321,7 @@ Format text and data in preparation for filing a ticket.
 """
 def non_executive_reset(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('non_executive_reset() called')
-    
+
     template = """The following user has reported a lost or stolen device and their password has been reset:
 {0}
 
@@ -359,7 +347,7 @@ Format text and data in preparation for filing a ticket.
 """
 def executive_reset(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('executive_reset() called')
-    
+
     template = """The following user has reported a lost or stolen device and their password has been reset:
 {0}
 
@@ -386,7 +374,7 @@ Format text and data for ticket when the password is not reset.
 """
 def not_reset(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('not_reset() called')
-    
+
     template = """The following user has reported a lost or stolen device and it was decided to not reset their password:
 {0}
 

@@ -13,36 +13,33 @@ The hunting Playbook queries a number of internal security technologies in order
 """
 
 def get_specific_assets(action, include_products=None):
-    
+
     supported_assets = phantom.get_assets(action=action)
     # phantom.debug("Action Supported Assets")
     # phantom.debug(supported_assets)
-    
+
     if not supported_assets:
         # no supported products configured
         return []
-    
+
     if not include_products:
         # no product filters, so return whatever we found
         return [x['name'] for x in supported_assets]
-    
-    if include_products:
-        
-        if (type(include_products) != list):
-            phantom.debug("Please specify a list for filter_products")
-            return []
-        
-        # make the product names sent to this funcion lower
-        include_products = [x.lower() for x in include_products]
-        
-        # get products that are configured and asked for
-        assets_matched = [x['name'] for x in supported_assets if x['product_name'].lower() in include_products]
+
+    if (type(include_products) != list):
+        phantom.debug("Please specify a list for filter_products")
+        return []
+
+    # make the product names sent to this funcion lower
+    include_products = [x.lower() for x in include_products]
+
         # phantom.debug("Action Supported Matches")
         # phantom.debug(assets_matched)
-        return assets_matched
-       
-    # should not reach here
-    return []
+    return [
+        x['name']
+        for x in supported_assets
+        if x['product_name'].lower() in include_products
+    ]
 
 # End - Global Code block
 ##############################
@@ -82,29 +79,26 @@ def filter_1(action=None, success=None, container=None, results=None, handle=Non
     return
 
 def get_system_info_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     assets = get_specific_assets("get system info", ["Carbon Black"])
-    
+
     if (not assets):
         phantom.debug("Carbon Black::get system info not found returning.")
-        
+
     # collect data for 'get_system_info_1' call
     filtered_container_data = phantom.collect2(container=container, datapath=['filtered-artifact:*.cef.sourceAddress', 'filtered-artifact:*.id'], filter_artifacts=filtered_artifacts)
 
-    parameters = []
-    
-    # build parameters list for 'get_system_info_1' call
-    for filtered_container_item in filtered_container_data:
-        if filtered_container_item[0]:
-            parameters.append({
-                'ip_hostname': filtered_container_item[0],
-            })
-
-    if parameters:
-        phantom.act("get system info", parameters=parameters, assets=assets, name="get_system_info_1")    
+    if parameters := [
+        {
+            'ip_hostname': filtered_container_item[0],
+        }
+        for filtered_container_item in filtered_container_data
+        if filtered_container_item[0]
+    ]:
+        phantom.act("get system info", parameters=parameters, assets=assets, name="get_system_info_1")
     else:
         phantom.error("'get_system_info_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def filter_4(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
@@ -150,88 +144,79 @@ def filter_2(action=None, success=None, container=None, results=None, handle=Non
 def hunt_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
 
     assets = get_specific_assets("hunt domain", ["Falcon Host API"])
-    
+
     if (not assets):
         phantom.debug("hunt domain/Falcon Host API not found returning.")
 
     # collect data for 'hunt_domain_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationDnsDomain', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_domain_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'domain': container_item[0],
-                'count_only': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
-
-    if parameters:
-        phantom.act("hunt domain", parameters=parameters, assets=assets, callback=filter_1, name="hunt_domain_1")    
+    if parameters := [
+        {
+            'domain': container_item[0],
+            'count_only': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]:
+        phantom.act("hunt domain", parameters=parameters, assets=assets, callback=filter_1, name="hunt_domain_1")
     else:
         phantom.error("'hunt_domain_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def get_file_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     assets = get_specific_assets("get file", ["Carbon Black"])
-    
+
     if (not assets):
         phantom.debug("Carbon Black::get file not found returning.")
-    
+
     # collect data for 'get_file_2' call
     filtered_container_data = phantom.collect2(container=container, datapath=['filtered-artifact:*.cef.fileHash', 'filtered-artifact:*.id'], filter_artifacts=filtered_artifacts)
 
-    parameters = []
-    
-    # build parameters list for 'get_file_2' call
-    for filtered_container_item in filtered_container_data:
-        if filtered_container_item[0]:
-            parameters.append({
-                'hash': filtered_container_item[0],
-            })
-
-    if parameters:
-        phantom.act("get file", parameters=parameters, assets=assets, callback=filter_3, name="get_file_2")    
+    if parameters := [
+        {
+            'hash': filtered_container_item[0],
+        }
+        for filtered_container_item in filtered_container_data
+        if filtered_container_item[0]
+    ]:
+        phantom.act("get file", parameters=parameters, assets=assets, callback=filter_3, name="get_file_2")
     else:
         phantom.error("'get_file_2' will not be executed due to lack of parameters")
-    
+
     return
 
 def detonate_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     assets = get_specific_assets("detonate file", ["Threat Grid"])
-    
+
     if (not assets):
         phantom.debug("Threat Grid::detonate file not found returning.")
-    
+
     # collect data for 'detonate_file_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["get_file_2:filtered-action_result.data.*.vault_id", "get_file_2:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'detonate_file_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'vault_id': filtered_results_item_1[0],
-                'file_name': "",
-                'vm': "",
-                'force_analysis': "",
-                'private': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
-
-    if parameters:
-        phantom.act("detonate file", parameters=parameters, assets=assets, name="detonate_file_1")    
+    if parameters := [
+        {
+            'vault_id': filtered_results_item_1[0],
+            'file_name': "",
+            'vm': "",
+            'force_analysis': "",
+            'private': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]:
+        phantom.act("detonate file", parameters=parameters, assets=assets, name="detonate_file_1")
     else:
         phantom.error("'detonate_file_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def filter_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
@@ -253,63 +238,60 @@ def filter_3(action=None, success=None, container=None, results=None, handle=Non
     return
 
 def file_reputation_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     assets = get_specific_assets("file reputation", ["TitaniumCloud"])
-    
+
     if (not assets):
         phantom.debug("ReversingLabs/TitaniumCloud::file reputation not found returning.")
 
     # collect data for 'file_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['filtered-artifact:*.cef.fileHash', 'filtered-artifact:*.id'], filter_artifacts=filtered_artifacts)
-    
+
     phantom.debug(container_data)
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'hash': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
-
-    if parameters:
-        phantom.act("file reputation", parameters=parameters, assets=assets, name="file_reputation_1", callback=filter_2)    
+    if parameters := [
+        {
+            'hash': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]:
+        phantom.act("file reputation", parameters=parameters, assets=assets, name="file_reputation_1", callback=filter_2)
     else:
         phantom.error("'file_reputation_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def run_query_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
 
     assets = get_specific_assets("run query", ["Splunk Enterprise", "Carbon Black"])
-    
+
     if (not assets):
         phantom.debug("Did not find any asset configured, supporting run query")
         return
-    
+
     container_data_src = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
     container_data_dst = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
     # build parameters list for 'run_query_1' call
-    
+
     phantom.debug("Got the following assets:")
-    phantom.debug(','.join([x for x in assets]))
-    
-    for container_item in container_data_src:
-        if container_item[0]:
-            parameters.append({
-                'query': container_item[0],
-                'display': "",
-                'type': "process",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-                })
-            
+    phantom.debug(','.join(list(assets)))
+
+    parameters = [
+        {
+            'query': container_item[0],
+            'display': "",
+            'type': "process",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data_src
+        if container_item[0]
+    ]
+
     for container_item in container_data_dst:
         if container_item[0]:
             parameters.append({
@@ -319,42 +301,39 @@ def run_query_1(action=None, success=None, container=None, results=None, handle=
                 # context (artifact id) is added to associate results with the artifact
                 'context': {'artifact_id': container_item[1]},
                 })
-            
+
     if (parameters):
         phantom.act("run query", parameters=parameters, assets=assets, name="run_query_1")
     else:
         phantom.error("'run_query_1' will not be executed due to lack of parameters")
-                
+
     return
 
 def hunt_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
 
     assets = get_specific_assets("hunt file", ["Carbon Black"])
-    
+
     if (not assets):
         phantom.debug("Carbon Black::hunt file not found returning.")
-        
+
     # collect data for 'hunt_file_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.fileHash', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_file_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'hash': container_item[0],
-                'range': "",
-                'type': "binary",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
-
-    if parameters:
-        phantom.act("hunt file", parameters=parameters, assets=assets, name="hunt_file_1", callback=filter_4)    
+    if parameters := [
+        {
+            'hash': container_item[0],
+            'range': "",
+            'type': "binary",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]:
+        phantom.act("hunt file", parameters=parameters, assets=assets, name="hunt_file_1", callback=filter_4)
     else:
         phantom.error("'hunt_file_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def on_finish(container, summary):

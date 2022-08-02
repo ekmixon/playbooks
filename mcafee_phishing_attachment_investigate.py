@@ -19,15 +19,12 @@ Only proceed with the playbook if the ingested email has an artifact with a vaul
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.vaultId", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         atd_detonate_file(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -38,22 +35,22 @@ Enrich the container with the geolocation of any IP addresses found in the deton
 """
 def geolocate_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('geolocate_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'geolocate_ip' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:atd_detonate_file:action_result.data.*.Summary.Ips.*.Ipv4", "filtered-data:filter_1:condition_1:atd_detonate_file:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'ip': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], name="geolocate_ip")
 
@@ -109,18 +106,15 @@ Create a new ticket with a summary of the information needed to start remediatio
 """
 def create_ticket_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.vaultId', 'artifact:*.id'])
     formatted_data_1 = phantom.get_format_data(name='format_ticket_and_email')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_2' call
-    for container_item in container_data:
-        parameters.append({
+    parameters = [
+        {
             'table': "incident",
             'fields': "",
             'vault_id': container_item[0],
@@ -128,7 +122,10 @@ def create_ticket_2(action=None, success=None, container=None, results=None, han
             'short_description': "phishing attachment present on endpoints",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': container_item[1]},
-        })
+        }
+        for container_item in container_data
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], name="create_ticket_2")
 
@@ -139,18 +136,15 @@ Email an analyst with a summary of the information needed to start remediation.
 """
 def send_email_to_analyst(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_to_analyst() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_to_analyst' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.vaultId', 'artifact:*.id'])
     formatted_data_1 = phantom.get_format_data(name='format_ticket_and_email')
 
-    parameters = []
-    
-    # build parameters list for 'send_email_to_analyst' call
-    for container_item in container_data:
-        parameters.append({
+    parameters = [
+        {
             'cc': "",
             'to': "analyst@mcafee-ebc.com",
             'bcc': "",
@@ -161,7 +155,10 @@ def send_email_to_analyst(action=None, success=None, container=None, results=Non
             'attachments': container_item[0],
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': container_item[1]},
-        })
+        }
+        for container_item in container_data
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="send_email_to_analyst")
 
@@ -176,16 +173,16 @@ def atd_detonate_file(action=None, success=None, container=None, results=None, h
     # collect data for 'atd_detonate_file' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.vaultId', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'atd_detonate_file' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'vault_id': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'vault_id': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="detonate file", parameters=parameters, assets=['mcafee_atd'], callback=atd_detonate_file_callback, name="atd_detonate_file")
 
@@ -204,22 +201,22 @@ Push any IP addresses identified in the ATD detonation to the OpenDXL message fa
 """
 def opendxl_push_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('opendxl_push_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'opendxl_push_ip' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:atd_detonate_file:action_result.data.*.Summary.Ips.*.Ipv4", "filtered-data:filter_1:condition_1:atd_detonate_file:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'opendxl_push_ip' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'dxl_ip': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'dxl_ip': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="post ip", parameters=parameters, assets=['mcafee_opendxl'], callback=ip_reputation_1, name="opendxl_push_ip")
 
@@ -230,25 +227,25 @@ Enrich the container with the reputation of any IP addresses found in the detona
 """
 def ip_reputation_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ip_reputation_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ip_reputation_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['opendxl_push_ip:action_result.parameter.dxl_ip', 'opendxl_push_ip:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'ph': "",
-                'to': "",
-                'from': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'ph': "",
+            'to': "",
+            'from': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['passivetotal'], name="ip_reputation_1", parent_action=action)
 
@@ -259,22 +256,22 @@ Use OpenDXL to connect to McAfee Active Response, querying for the existence of 
 """
 def mar_lookup_hash(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('mar_lookup_hash() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'mar_lookup_hash' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:atd_detonate_file:action_result.data.*.Summary.Files.*.Md5", "filtered-data:filter_1:condition_1:atd_detonate_file:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'mar_lookup_hash' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'mar_md5': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'mar_md5': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="lookup hash", parameters=parameters, assets=['mcafee_opendxl'], callback=filter_2, name="mar_lookup_hash")
 
@@ -285,29 +282,29 @@ Always send the high-level ATD verdict description to the admin to keep them in 
 """
 def send_email_to_admin(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_to_admin() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_to_admin' call
     results_data_1 = phantom.collect2(container=container, datapath=['atd_detonate_file:action_result.data.*.Summary.Verdict.Description', 'atd_detonate_file:action_result.summary.verdict', 'atd_detonate_file:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'send_email_to_admin' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'cc': "",
-                'to': "admin@mcafee-ebc.com",
-                'bcc': "",
-                'body': results_item_1[0],
-                'from': "phantom@mcafee-ebc.com",
-                'headers': "",
-                'subject': results_item_1[1],
-                'attachments': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'cc': "",
+            'to': "admin@mcafee-ebc.com",
+            'bcc': "",
+            'body': results_item_1[0],
+            'from': "phantom@mcafee-ebc.com",
+            'headers': "",
+            'subject': results_item_1[1],
+            'attachments': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="send_email_to_admin", parent_action=action)
 
@@ -318,23 +315,23 @@ Push out the identified hashes for use by McAfee Threat Intelligence Exchange (T
 """
 def opendxl_push_hash(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('opendxl_push_hash() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'opendxl_push_hash' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_2:condition_1:mar_lookup_hash:action_result.data.*.items.*.output.Files|md5", "filtered-data:filter_2:condition_1:mar_lookup_hash:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'opendxl_push_hash' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'dxl_rep': "KNOWN_MALICIOUS",
-                'tie_md5': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'dxl_rep': "KNOWN_MALICIOUS",
+            'tie_md5': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="post hash", parameters=parameters, assets=['mcafee_opendxl'], name="opendxl_push_hash")
 
@@ -345,7 +342,7 @@ Summarize the key findings from the investigation to populate a new ticket and a
 """
 def format_ticket_and_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ticket_and_email() called')
-    
+
     template = """Phantom received a potential phishing email from {0} with source_id {1}
 
 Since the email contained an attachment, Phantom used McAfee ATD to detonate the file. The detonation returned a severity verdict of {2}

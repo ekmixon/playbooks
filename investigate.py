@@ -11,40 +11,35 @@ from datetime import datetime, timedelta
 import traceback
 
 def asset_configured(action):
-    assets = phantom.get_assets(action=action)
-    if assets:
-        return True
-    
-    return False
+    return bool(assets := phantom.get_assets(action=action))
 
 def get_filtered_assets(action=None, exclude_products=None, products=None):
-    
+
     supported_assets = phantom.get_assets(action=action)
-    
+
     if not supported_assets:
         return []
-    
+
     #phantom.debug(supported_assets)
     ret_assets=[]
-    
+
     if exclude_products:
         raise ValueError("Error in get_filtered_assets(): excluded_products is no longer supported")
-    
+
     if products:
         products = [x.lower() for x in products]
-        
+
     for asset in supported_assets:
         if products:
             if asset['product_name'].lower() in products:
                 ret_assets.append(asset['name'])
-            
-        else:
-            if exclude_products:
-                if asset['product_name'].lower() not in exclude_products:
-                    ret_assets.append(asset['name'])
-            else:
+
+        elif exclude_products:
+            if asset['product_name'].lower() not in exclude_products:
                 ret_assets.append(asset['name'])
-    
+        else:
+            ret_assets.append(asset['name'])
+
     ret_assets = list(set(ret_assets))
     if not ret_assets:
         ret_assets = None
@@ -60,26 +55,22 @@ def deescalate(container):
     
 # checks across all hash info providers if the hash is bad or not
 def is_file_bad(results):
-    
+
     if not results:
         return []
-    
-    any_success = False
-    for result in results:
-        if result['status'] == 'success':
-            any_success = True
-    
+
+    any_success = any(result['status'] == 'success' for result in results)
     if not any_success:
         return []
-    
+
     # users can override what they think is tha appropriate thershold
-    VT_BAD_THRESHOLD = 5 
+    VT_BAD_THRESHOLD = 5
     RL_BAD_THRESHOLD = 6
     AUTOFOCUS_TAGS_THRESHOLD = 1
     THREATSCAPE_REPORTS_THRESHOLD = 1
-    
+
     ret_data=[]
-    
+
     try:
         ACTION_INDEX=0
         APP_INDEX=1
@@ -87,7 +78,7 @@ def is_file_bad(results):
         HASH_INDEX=3
         ARTIFACT_ID_INDEX=4
 
-        
+
         collected = phantom.collect2(action_results=results, 
                                      datapath=["action",                                        #0
                                                "app",                                           #1
@@ -95,7 +86,7 @@ def is_file_bad(results):
                                                "action_result.parameter.hash",                  #3
                                                "action_result.parameter.context.artifact_id",   #4
                                                # Action specific datapaths
-                                               
+
                                                #5 'file reputation' of Reversing Labs and VirusTotal
                                                "action_result.summary.positives",               #5
                                                #6 'file reputation' of ThreatGrid
@@ -105,58 +96,76 @@ def is_file_bad(results):
                                                #8 'hunt file' of ThreatScape
                                                "action_result.summary.reports_matched"          #8
                                                ])                                       
-        
-        #phantom.debug(collected)
-    
-        for item in collected:
-            ret_item = {}
-            ret_item['hash'] = item[HASH_INDEX]
-            ret_item['artifact_id'] = item[ARTIFACT_ID_INDEX]
 
-            if item[ACTION_INDEX] == "file reputation" and item[APP_INDEX] == "ReversingLabs" and item[STATUS_INDEX] == "success":
-                if item[HASH_INDEX] and item[ARTIFACT_ID_INDEX] and item[5]:
-                    ret_item['bad']= item[5] > RL_BAD_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
-                    
-            if item[ACTION_INDEX] == "file reputation" and item[APP_INDEX] == "VirusTotal" and item[STATUS_INDEX] == "success":
-                if item[HASH_INDEX] and item[ARTIFACT_ID_INDEX] and item[5]:
-                    ret_item['bad']= item[5] > RL_BAD_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
-            
-            if item[ACTION_INDEX] == "hunt file" and item[APP_INDEX] == "AutoFocus" and item[STATUS_INDEX] == "success":
-                if item[HASH_INDEX] and item[ARTIFACT_ID_INDEX] and item[7]:
-                    ret_item['bad']= item[7] > AUTOFOCUS_TAGS_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
-                    
-            if item[ACTION_INDEX] == "hunt file" and item[APP_INDEX] == "ThreatScape" and item[STATUS_INDEX] == "success":
-                if item[HASH_INDEX] and item[ARTIFACT_ID_INDEX] and item[8]:
-                    ret_item['bad']= item[8] > THREATSCAPE_REPORTS_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue                    
-            
+        #phantom.debug(collected)
+
+        for item in collected:
+            ret_item = {'hash': item[HASH_INDEX], 'artifact_id': item[ARTIFACT_ID_INDEX]}
+            if (
+                item[ACTION_INDEX] == "file reputation"
+                and item[APP_INDEX] == "ReversingLabs"
+                and item[STATUS_INDEX] == "success"
+                and item[HASH_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[5]
+            ):
+                ret_item['bad']= item[5] > RL_BAD_THRESHOLD
+                ret_data.append(ret_item)
+                continue
+
+            if (
+                item[ACTION_INDEX] == "file reputation"
+                and item[APP_INDEX] == "VirusTotal"
+                and item[STATUS_INDEX] == "success"
+                and item[HASH_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[5]
+            ):
+                ret_item['bad']= item[5] > RL_BAD_THRESHOLD
+                ret_data.append(ret_item)
+                continue
+
+            if (
+                item[ACTION_INDEX] == "hunt file"
+                and item[APP_INDEX] == "AutoFocus"
+                and item[STATUS_INDEX] == "success"
+                and item[HASH_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[7]
+            ):
+                ret_item['bad']= item[7] > AUTOFOCUS_TAGS_THRESHOLD
+                ret_data.append(ret_item)
+                continue
+
+            if (
+                item[ACTION_INDEX] == "hunt file"
+                and item[APP_INDEX] == "ThreatScape"
+                and item[STATUS_INDEX] == "success"
+                and item[HASH_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[8]
+            ):
+                ret_item['bad']= item[8] > THREATSCAPE_REPORTS_THRESHOLD
+                ret_data.append(ret_item)
     except:
-        phantom.error("Exception ocurred in parsing results: {}".format(traceback.format_exc()))
-        
+        phantom.error(
+            f"Exception ocurred in parsing results: {traceback.format_exc()}"
+        )
+
+
     return ret_data
 
 # checks across all domain info providers if the domain is bad or not
 def is_domain_bad(results):
-    
+
     if not results:
         return []
-    
-    any_success = False
-    for result in results:
-        if result['status'] == 'success':
-            any_success = True
-    
+
+    any_success = any(result['status'] == 'success' for result in results)
     if not any_success:
         return []
-    
-    
+
+
     ODNS_MALICIOUS = 'MALICIOUS'
     ATS_THREATSCORE = 70
     POSITIVES_THRESHOLD = 5
@@ -164,9 +173,9 @@ def is_domain_bad(results):
     DT_KP = 'kp'
     ATS_KP = 'North Korea'
     WHOIS_KP = 'KP'
-    
+
     ret_data=[]
-    
+
     try:
         #phantom.debug("domain investigation results: {}".format(results))
         ACTION_INDEX=0
@@ -174,7 +183,7 @@ def is_domain_bad(results):
         STATUS_INDEX=2
         DOMAIN_INDEX=3
         ARTIFACT_ID_INDEX=4
-        
+
         collected = phantom.collect2(action_results=results,
                                      datapath=["action",                                           #0
                                                "app",                                              #1
@@ -206,141 +215,201 @@ def is_domain_bad(results):
                                                "action_result.data.*.contacts.registrant.country", #15
                                                #16: 'whois domain' from Whois
                                                "action_result.summary.country_code"])              #16                         
-        
+
 
         #phantom.debug(collected)
-    
+
         for item in collected:
-            ret_item = {}
-            ret_item['domain'] = item[DOMAIN_INDEX]
-            ret_item['artifact_id'] = item[ARTIFACT_ID_INDEX]
+            ret_item = {
+                'domain': item[DOMAIN_INDEX],
+                'artifact_id': item[ARTIFACT_ID_INDEX],
+            }
 
-            
-            if item[ACTION_INDEX] == "domain reputation" and item[APP_INDEX] == "OpenDNS Investigate" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[5]:
-                    ret_item['bad']= item[5] == ODNS_MALICIOUS
-                    ret_data.append(ret_item)
-                    continue
-                    
-            if item[ACTION_INDEX] == "domain reputation" and item[APP_INDEX] == "PassiveTotal" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[6]:
-                    ret_item['bad'] = item[6] 
-                    ret_data.append(ret_item)
-                    continue
-            
-            if item[ACTION_INDEX] == "domain reputation" and item[APP_INDEX] == "ThreatStream" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[7]:
-                    for threatscore in item[7]:
-                        if ret_item['bad']:  # checking if the value has been set yet
-                            if ret_item['bad'] == False:  # Checking if the threatscore threshold has been already met.  
-                                ret_item['bad']= threatscore > ATS_THREATSCORE
-                                ret_data.append(ret_item)          
-                                continue
-                        else:
-                            ret_item['bad']= threatscore > ATS_THREATSCORE
-                            ret_data.append(ret_item)          
-                            continue
+            if (
+                item[ACTION_INDEX] == "domain reputation"
+                and item[APP_INDEX] == "OpenDNS Investigate"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[5]
+            ):
+                ret_item['bad']= item[5] == ODNS_MALICIOUS
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "domain reputation" and item[APP_INDEX] == "URLVoid" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[8]:
-                    ret_item['bad']= item[8] > POSITIVES_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
+            if (
+                item[ACTION_INDEX] == "domain reputation"
+                and item[APP_INDEX] == "PassiveTotal"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[6]
+            ):
+                ret_item['bad'] = item[6]
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "domain reputation" and item[APP_INDEX] == "VirusTotal" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[9]:
-                    ret_item['bad']= item[9] > POSITIVES_THRESHOLD
-                    ret_data.append(ret_item)       
-                    continue
+            if (
+                item[ACTION_INDEX] == "domain reputation"
+                and item[APP_INDEX] == "ThreatStream"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[7]
+            ):
+                for threatscore in item[7]:
+                    if (
+                        ret_item['bad']
+                        and ret_item['bad'] == False
+                        or not ret_item['bad']
+                    ):  # Checking if the threatscore threshold has been already met.  
+                        ret_item['bad']= threatscore > ATS_THREATSCORE
+                        ret_data.append(ret_item)
+            if (
+                item[ACTION_INDEX] == "domain reputation"
+                and item[APP_INDEX] == "URLVoid"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[8]
+            ):
+                ret_item['bad']= item[8] > POSITIVES_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "hunt domain" and item[APP_INDEX] == "AutoFocus" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[10]:
-                    ret_item['bad']= item[10] > POSITIVES_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
-                    
-            if item[ACTION_INDEX] == "hunt domain" and item[APP_INDEX] == "ThreatScape" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[11]:
-                    ret_item['bad']= item[11] > POSITIVES_THRESHOLD
-                    ret_data.append(ret_item)   
-                    continue
+            if (
+                item[ACTION_INDEX] == "domain reputation"
+                and item[APP_INDEX] == "VirusTotal"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[9]
+            ):
+                ret_item['bad']= item[9] > POSITIVES_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "reverse domain" and item[APP_INDEX] == "DomainTools" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[12]:
-                    ret_item['bad']= item[12] > POSITIVES_THRESHOLD
-                    ret_data.append(ret_item)   
-                    continue
-                    
-            if item[ACTION_INDEX] == "whois domain" and item[APP_INDEX] == "DomainTools" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[13]:
-                    ret_item['bad']= item[13] == DT_KP
-                    ret_data.append(ret_item)  
-                    continue
-                                        
-            if item[ACTION_INDEX] == "whois domain" and item[APP_INDEX] == "OpenDNS Investigate" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[14]:
-                    for country in item[14]:
-                        if ret_item['bad']:  # checking if the value has been set yet
-                            if ret_item['bad'] == False:  # Checking if the 'bad' bit has been already met.  
-                                ret_item['bad']= item[14] == ODNS_KP
-                                ret_data.append(ret_item)          
-                                continue
-                        else:
-                            ret_item['bad']= item[14] == ODNS_KP
-                            ret_data.append(ret_item)          
-                            continue
+            if (
+                item[ACTION_INDEX] == "hunt domain"
+                and item[APP_INDEX] == "AutoFocus"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[10]
+            ):
+                ret_item['bad']= item[10] > POSITIVES_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "whois domain" and item[APP_INDEX] == "ThreatStream" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[15]:
-                    for country in item[15]:
-                        if ret_item['bad']:  # checking if the value has been set yet
-                            if ret_item['bad'] == False:  # Checking if the 'bad' bit has been already met.  
-                                ret_item['bad']= item[15] == ATS_KP
-                                ret_data.append(ret_item)          
-                                continue
-                        else:
-                            ret_item['bad']= item[15] == ATS_KP
-                            ret_data.append(ret_item)  
-                            continue
+            if (
+                item[ACTION_INDEX] == "hunt domain"
+                and item[APP_INDEX] == "ThreatScape"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[11]
+            ):
+                ret_item['bad']= item[11] > POSITIVES_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
-            if item[ACTION_INDEX] == "whois domain" and item[APP_INDEX] == "Whois" and item[STATUS_INDEX] == "success":
-                if item[DOMAIN_INDEX] and item[ARTIFACT_ID_INDEX] and item[16]:
-                    ret_item['bad']= item[16] == WHOIS_KP
-                    ret_data.append(ret_item)                              
-                    continue
+            if (
+                item[ACTION_INDEX] == "reverse domain"
+                and item[APP_INDEX] == "DomainTools"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[12]
+            ):
+                ret_item['bad']= item[12] > POSITIVES_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
+            if (
+                item[ACTION_INDEX] == "whois domain"
+                and item[APP_INDEX] == "DomainTools"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[13]
+            ):
+                ret_item['bad']= item[13] == DT_KP
+                ret_data.append(ret_item)
+                continue
+
+            if (
+                item[ACTION_INDEX] == "whois domain"
+                and item[APP_INDEX] == "OpenDNS Investigate"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[14]
+            ):
+                for country in item[14]:
+                    if (
+                        ret_item['bad']
+                        and ret_item['bad'] == False
+                        or not ret_item['bad']
+                    ):  # Checking if the 'bad' bit has been already met.  
+                        ret_item['bad']= item[14] == ODNS_KP
+                        ret_data.append(ret_item)
+            if (
+                item[ACTION_INDEX] == "whois domain"
+                and item[APP_INDEX] == "ThreatStream"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[15]
+            ):
+                for country in item[15]:
+                    if (
+                        ret_item['bad']
+                        and ret_item['bad'] == False
+                        or not ret_item['bad']
+                    ):  # Checking if the 'bad' bit has been already met.  
+                        ret_item['bad']= item[15] == ATS_KP
+                        ret_data.append(ret_item)
+            if (
+                item[ACTION_INDEX] == "whois domain"
+                and item[APP_INDEX] == "Whois"
+                and item[STATUS_INDEX] == "success"
+                and item[DOMAIN_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[16]
+            ):
+                ret_item['bad']= item[16] == WHOIS_KP
+                ret_data.append(ret_item)
     except:
-        phantom.error("Exception ocurred in parsing results: {}".format(traceback.format_exc()))
-        
+        phantom.error(
+            f"Exception ocurred in parsing results: {traceback.format_exc()}"
+        )
+
+
     return ret_data
 
 # checks across all url info providers if the hash is bad or not
 def is_url_bad(results):
 
-    
+
     if not results:
         return []
-    
-    any_success = False
-    for result in results:
-        if result['status'] == 'success':
-            any_success = True
-    
+
+    any_success = any(result['status'] == 'success' for result in results)
     if not any_success:
         return []
-    
+
     GENERAL_THRESHOLD = 5
 
     ret_data=[]
-    
+
     try:
         ACTION_INDEX=0
         APP_INDEX=1
         STATUS_INDEX=2
         URL_INDEX=3
         ARTIFACT_ID_INDEX=4
-        
-        
+
+
         collected = phantom.collect2(action_results=results,
                                      datapath=["action",                                        #0
                                                "app",                                           #1
@@ -359,31 +428,46 @@ def is_url_bad(results):
         #phantom.debug(collected)
 
         for item in collected:
-            ret_item = {}
-            ret_item['url'] = item[URL_INDEX]
-            ret_item['artifact_id'] = item[ARTIFACT_ID_INDEX]
+            ret_item = {'url': item[URL_INDEX], 'artifact_id': item[ARTIFACT_ID_INDEX]}
+            if (
+                item[ACTION_INDEX] == "hunt url"
+                and item[APP_INDEX] == "AutoFocus"
+                and item[STATUS_INDEX] == "success"
+                and item[URL_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[5]
+            ):
+                ret_item['bad']= item[5] > GENERAL_THRESHOLD
+                ret_data.append(ret_item)
+                continue
 
-                                                
-            if item[ACTION_INDEX] == "hunt url" and item[APP_INDEX] == "AutoFocus" and item[STATUS_INDEX] == "success":
-                if item[URL_INDEX] and item[ARTIFACT_ID_INDEX] and item[5]:
-                    ret_item['bad']= item[5] > GENERAL_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue
+            if (
+                item[ACTION_INDEX] == "hunt url"
+                and item[APP_INDEX] == "ThreatScape"
+                and item[STATUS_INDEX] == "success"
+                and item[URL_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[6]
+            ):
+                ret_item['bad']= item[6] > GENERAL_THRESHOLD
+                ret_data.append(ret_item)
+                continue                    
 
-            if item[ACTION_INDEX] == "hunt url" and item[APP_INDEX] == "ThreatScape" and item[STATUS_INDEX] == "success":
-                if item[URL_INDEX] and item[ARTIFACT_ID_INDEX] and item[6]:
-                    ret_item['bad']= item[6] > GENERAL_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue                    
-
-            if item[ACTION_INDEX] == "url reputation" and item[APP_INDEX] == "VirusTotal" and item[STATUS_INDEX] == "success":
-                if item[URL_INDEX] and item[ARTIFACT_ID_INDEX] and item[7]:
-                    ret_item['bad']= item[7] > GENERAL_THRESHOLD
-                    ret_data.append(ret_item)
-                    continue             
-                    
+            if (
+                item[ACTION_INDEX] == "url reputation"
+                and item[APP_INDEX] == "VirusTotal"
+                and item[STATUS_INDEX] == "success"
+                and item[URL_INDEX]
+                and item[ARTIFACT_ID_INDEX]
+                and item[7]
+            ):
+                ret_item['bad']= item[7] > GENERAL_THRESHOLD
+                ret_data.append(ret_item)
     except:
-        phantom.error("Exception ocurred in parsing results: {}".format(traceback.format_exc()))                    
+        phantom.error(
+            f"Exception ocurred in parsing results: {traceback.format_exc()}"
+        )
+                            
 
     return ret_data
 

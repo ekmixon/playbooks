@@ -16,15 +16,12 @@ def on_start(container):
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.sourceAddress", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         decision_3(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -35,15 +32,16 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
-            ["artifact:*.cef.sourceAddress", "in", "custom_list:test_machine_ips"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "artifact:*.cef.sourceAddress",
+                "in",
+                "custom_list:test_machine_ips",
+            ],
+        ],
+    ):
         join_deescalate_alert(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -55,15 +53,16 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 def decision_5(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_5() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
-            ["artifact:*.cef.sourceAddress", "not in", "custom_list:non_test_machine_ips"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "artifact:*.cef.sourceAddress",
+                "not in",
+                "custom_list:non_test_machine_ips",
+            ],
+        ],
+    ):
         prompt_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -73,24 +72,24 @@ def decision_5(action=None, success=None, container=None, results=None, handle=N
 
 def Add_to_test_machine_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('Add_to_test_machine_list() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'Add_to_test_machine_list' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'Add_to_test_machine_list' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'list': "custom_list:test_machine_ips",
-                'create': True,
-                'new_row': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'list': "custom_list:test_machine_ips",
+            'create': True,
+            'new_row': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="add listitem", parameters=parameters, assets=['helper'], callback=join_deescalate_alert, name="Add_to_test_machine_list")
 
@@ -98,24 +97,24 @@ def Add_to_test_machine_list(action=None, success=None, container=None, results=
 
 def Add_to_non_test_machine_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('Add_to_non_test_machine_list() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'Add_to_non_test_machine_list' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'Add_to_non_test_machine_list' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'list': "custom_list:non_test_machine_ips",
-                'create': True,
-                'new_row': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'list': "custom_list:non_test_machine_ips",
+            'create': True,
+            'new_row': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="add listitem", parameters=parameters, assets=['helper'], name="Add_to_non_test_machine_list")
 
@@ -124,16 +123,13 @@ def Add_to_non_test_machine_list(action=None, success=None, container=None, resu
 def decision_4(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_4() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "!=", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         Add_to_test_machine_list(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -164,7 +160,7 @@ def join_deescalate_alert(action=None, success=None, container=None, results=Non
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Automation Engineer"
     message = """sourceAddress \"{0}\" has been compromised - is this a test machine?"""

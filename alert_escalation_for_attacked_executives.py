@@ -25,15 +25,12 @@ def escalate_alert(action=None, success=None, container=None, results=None, hand
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.suser", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         list_user_groups_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -44,16 +41,13 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["list_user_groups_1:action_result.summary.total_groups", ">", 0],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         decision_4(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -64,16 +58,17 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 def decision_4(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_4() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["CN=Executive", "in", "list_user_groups_1:action_result.data.*.group"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "CN=Executive",
+                "in",
+                "list_user_groups_1:action_result.data.*.group",
+            ],
+        ],
+    ):
         escalate_alert(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -87,16 +82,16 @@ def list_user_groups_1(action=None, success=None, container=None, results=None, 
     # collect data for 'list_user_groups_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.suser', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'list_user_groups_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'username': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'username': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="list user groups", parameters=parameters, assets=['active directory'], callback=decision_3, name="list_user_groups_1")
 

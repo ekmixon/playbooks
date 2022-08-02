@@ -30,10 +30,9 @@ def regex_filter_list(input_list=None, regex=None, action=None, **kwargs):
             if re.match(str(regex), str(item)):
                 if action == 'keep':
                     outputs.append({"item": item})
-            else:
-                if action == 'drop':
-                    outputs.append({"item": item})
-    
+            elif action == 'drop':
+                outputs.append({"item": item})
+
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable
     return outputs

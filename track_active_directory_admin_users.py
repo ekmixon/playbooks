@@ -21,14 +21,14 @@ def check_for_generator(action=None, success=None, container=None, results=None,
 
     # collect data for 'check_for_generator' call
 
-    parameters = []
-    
-    # build parameters list for 'check_for_generator' call
-    parameters.append({
-        'headers': "",
-        'location': "/rest/asset?_filter_tags=[\"track_active_directory_admin_users\"]",
-        'verify_certificate': False,
-    })
+    parameters = [
+        {
+            'headers': "",
+            'location': "/rest/asset?_filter_tags=[\"track_active_directory_admin_users\"]",
+            'verify_certificate': False,
+        }
+    ]
+
 
     phantom.act(action="get data", parameters=parameters, assets=['http'], callback=extract_response_body, name="check_for_generator")
 
@@ -39,20 +39,20 @@ Get a list of all the users in the "Administrators" group in Active Directory, w
 """
 def get_users_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_users_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_users_1' call
 
-    parameters = []
-    
-    # build parameters list for 'get_users_1' call
-    parameters.append({
-        'ph': "",
-        'all_users': False,
-        'object_name': "Administrators",
-        'object_class': "group",
-    })
+    parameters = [
+        {
+            'ph': "",
+            'all_users': False,
+            'object_name': "Administrators",
+            'object_class': "group",
+        }
+    ]
+
 
     phantom.act(action="get users", parameters=parameters, assets=['domainctrl1'], callback=filter_1, name="get_users_1")
 
@@ -108,25 +108,25 @@ Send an email to notify appropriate personnel of any new Administrators that wer
 """
 def send_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_1' call
     formatted_data_1 = phantom.get_format_data(name='format_email')
 
-    parameters = []
-    
-    # build parameters list for 'send_email_1' call
-    parameters.append({
-        'cc': "",
-        'to': "notifications@example.com",
-        'bcc': "",
-        'body': formatted_data_1,
-        'from': "notifications@example.com",
-        'headers': "",
-        'subject': "New Admin Users",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "notifications@example.com",
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "notifications@example.com",
+            'headers': "",
+            'subject': "New Admin Users",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=update_custom_list, name="send_email_1")
 
@@ -138,16 +138,17 @@ Decide whether this is the first execution of this playbook, in which case a new
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["track_active_directory_admin_users", "in", "extract_response_body:formatted_data"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "track_active_directory_admin_users",
+                "in",
+                "extract_response_body:formatted_data",
+            ],
+        ],
+    ):
         get_users_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -162,7 +163,7 @@ Format a JSON object for creating a Generator asset to run the Active Directory 
 """
 def format_generator(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_generator() called')
-    
+
     input_parameter_0 = ""
 
     format_generator__generator = None
@@ -172,7 +173,7 @@ def format_generator(action=None, success=None, container=None, results=None, ha
     ################################################################################
 
     now_plus_minute = int(datetime.utcnow().strftime('%s')) + 60
-    
+
     format_generator__generator = {
         "description": "A cronjob-style Generator to kick off the track_active_directory_admin_users Playbook",
         "name": "track_active_directory_admin_users_generator",
@@ -197,7 +198,7 @@ def format_generator(action=None, success=None, container=None, results=None, ha
             }
         }
     }
-    
+
     format_generator__generator = json.dumps(format_generator__generator)
 
     ################################################################################
@@ -214,21 +215,21 @@ Create a Generator asset by POSTing the desired configuration to the REST API of
 """
 def create_generator(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_generator() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     format_generator__generator = json.loads(phantom.get_run_data(key='format_generator:generator'))
     # collect data for 'create_generator' call
 
-    parameters = []
-    
-    # build parameters list for 'create_generator' call
-    parameters.append({
-        'body': format_generator__generator,
-        'headers': "",
-        'location': "/rest/asset",
-        'verify_certificate': False,
-    })
+    parameters = [
+        {
+            'body': format_generator__generator,
+            'headers': "",
+            'location': "/rest/asset",
+            'verify_certificate': False,
+        }
+    ]
+
 
     phantom.act(action="post data", parameters=parameters, assets=['http'], callback=create_custom_list, name="create_generator")
 
@@ -239,7 +240,7 @@ Convert the returned HTTP response body into a flat string that can be used dire
 """
 def extract_response_body(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('extract_response_body() called')
-    
+
     template = """{0}"""
 
     # parameter list for template variable replacement
@@ -258,7 +259,7 @@ Format a message for an email listing the new Administrators that were detected.
 """
 def format_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_email() called')
-    
+
     template = """The Phantom playbook called track_active_directory_admin_users detected that the following new users were added to the Administrators group in Active Directory:
 {0}"""
 

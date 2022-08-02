@@ -28,7 +28,7 @@ Build a Splunk query to find the DNS log with the UID matching the Phantom event
 """
 def format_DNS_alert_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_DNS_alert_query() called')
-    
+
     template = """index=corelight sourcetype=corelight_dns {0} earliest={1} latest=now() | table uid answer id.orig_h"""
 
     # parameter list for template variable replacement
@@ -48,21 +48,21 @@ Run the Splunk query built in the previous block.
 """
 def run_DNS_alert_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_DNS_alert_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_DNS_alert_query' call
     formatted_data_1 = phantom.get_format_data(name='format_DNS_alert_query')
 
-    parameters = []
-    
-    # build parameters list for 'run_DNS_alert_query' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=filter_DNS_answer, name="run_DNS_alert_query")
 
@@ -73,21 +73,21 @@ Run the Splunk query built in the previous block.
 """
 def run_source_dest_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_source_dest_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     IP_regex_and_format_source_dest_query__query = json.loads(phantom.get_run_data(key='IP_regex_and_format_source_dest_query:query'))
     # collect data for 'run_source_dest_query' call
 
-    parameters = []
-    
-    # build parameters list for 'run_source_dest_query' call
-    parameters.append({
-        'query': IP_regex_and_format_source_dest_query__query,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': IP_regex_and_format_source_dest_query__query,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=If_traffic_between_the_two_units, name="run_source_dest_query")
 
@@ -122,7 +122,7 @@ Loop through each matching DNS alert from the previous Splunk query,  validate I
 """
 def IP_regex_and_format_source_dest_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('IP_regex_and_format_source_dest_query() called')
-    
+
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.id_orig_h', 'artifact:*.id'])
     filtered_results_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_DNS_answer:condition_1:run_DNS_alert_query:action_result.data.*.answer'])
     container_item_0 = [item[0] for item in container_data]
@@ -140,12 +140,12 @@ def IP_regex_and_format_source_dest_query(action=None, success=None, container=N
     #This query loops through the Corelight Answers and checks if a valid IP4/IP6 address
     # it then creates a query to check if there was a conn log entry between the two IP address.
     id_orig_h = str(container_item_0[0])
-    query_base = "index=corelight id.orig_h = " + id_orig_h + " AND id.resp_h = "
+    query_base = f"index=corelight id.orig_h = {id_orig_h} AND id.resp_h = "
     IPregex = '''^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
             25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
             25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
             25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$'''
-    
+
     for results_item_1 in filtered_results_data_1:
         if results_item_1[0]:
             for item in results_item_1:
@@ -162,37 +162,27 @@ def IP_regex_and_format_source_dest_query(action=None, success=None, container=N
 
     return
 
-    ################################################################################
-    ## Custom Code End
-    ################################################################################
-
-    phantom.save_run_data(key='IP_regex_and_format_source_dest_query:query', value=json.dumps(IP_regex_and_format_source_dest_query__query))
-    phantom.save_run_data(key='IP_regex_and_format_source_dest_query:id_resp_h', value=json.dumps(IP_regex_and_format_source_dest_query__id_resp_h))
-    run_source_dest_query(container=container)
-
-    return
-
 """
 Run the Splunk query built in the previous block.
 """
 def query_connections(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('query_connections() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'query_connections' call
     formatted_data_1 = phantom.get_format_data(name='format_connection_query__as_list')
 
-    parameters = []
-    
-    # build parameters list for 'query_connections' call
-    for formatted_part_1 in formatted_data_1:
-        parameters.append({
+    parameters = [
+        {
             'query': formatted_part_1,
             'command': "search",
             'display': "",
             'parse_only': False,
-        })
+        }
+        for formatted_part_1 in formatted_data_1
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=filter_nonzero_bytes, name="query_connections")
 
@@ -262,7 +252,7 @@ Format a detailed query to collect plaintext HTTP indicators to present to analy
 """
 def format_HTTP_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_HTTP_query() called')
-    
+
     template = """index=corelight sourcetype=corelight_http {0} | table ts uid host uri method referrer user_agent"""
 
     # parameter list for template variable replacement
@@ -281,21 +271,21 @@ Run the Splunk query built in the previous block.
 """
 def run_HTTP_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_HTTP_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_HTTP_query' call
     formatted_data_1 = phantom.get_format_data(name='format_HTTP_query')
 
-    parameters = []
-    
-    # build parameters list for 'run_HTTP_query' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=format_http_note, name="run_HTTP_query")
 
@@ -306,7 +296,7 @@ Format a query for Suricata alerts generated on the connection resulting from th
 """
 def format_suricata_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_suricata_query() called')
-    
+
     template = """index=corelight sourcetype=corelight_suricata_corelight {0} | table uid alert.signature alert.signature_id alert.rev alert.category alert.severity alert.metadata metadata id.orig_h id.orig_p id.resp_h id.resp_p ts"""
 
     # parameter list for template variable replacement
@@ -325,21 +315,21 @@ Run the Splunk query built in the previous block.
 """
 def run_suricata_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_suricata_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_suricata_query' call
     formatted_data_1 = phantom.get_format_data(name='format_suricata_query')
 
-    parameters = []
-    
-    # build parameters list for 'run_suricata_query' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=filter_valid_suricata_alerts, name="run_suricata_query")
 
@@ -350,7 +340,7 @@ Format a detailed query to collect SSL/TLS indicators to present to analysts.
 """
 def format_SSL_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_SSL_query() called')
-    
+
     template = """index=corelight sourcetype=corelight_ssl {0} | table uid subject validation_status version ja3 ja3s"""
 
     # parameter list for template variable replacement
@@ -369,21 +359,21 @@ Run the Splunk query built in the previous block.
 """
 def run_file_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_file_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_file_query' call
     formatted_data_1 = phantom.get_format_data(name='format_file_query')
 
-    parameters = []
-    
-    # build parameters list for 'run_file_query' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=filter_valid_files, name="run_file_query")
 
@@ -394,21 +384,21 @@ Run the Splunk query built in the previous block.
 """
 def run_SSL_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_SSL_query() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_SSL_query' call
     formatted_data_1 = phantom.get_format_data(name='format_SSL_query')
 
-    parameters = []
-    
-    # build parameters list for 'run_SSL_query' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "search",
-        'display': "",
-        'parse_only': False,
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "search",
+            'display': "",
+            'parse_only': False,
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk','splunk'], callback=format_ssl_note, name="run_SSL_query")
 
@@ -419,22 +409,22 @@ Query Virustotal for threat information about any SHA1 hashes found in the corel
 """
 def file_reputation_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('file_reputation_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'file_reputation_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['run_file_query:action_result.data.*.sha1', 'run_file_query:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'hash': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="file reputation", parameters=parameters, assets=['virustotal'], callback=filter_7, name="file_reputation_1")
 
@@ -515,7 +505,7 @@ Format a note for the SSL metadata.
 """
 def format_ssl_note(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ssl_note() called')
-    
+
     template = """UID = {0}
 JA3 = {1}
 ja3s = {2}
@@ -565,7 +555,7 @@ Format a heads-up display pin for any Suricata alerts that were found.
 """
 def format_suricata_pin(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_suricata_pin() called')
-    
+
     template = """URI = {1}
 SURI_id = {0}
 alert.signature ={2}"""
@@ -651,7 +641,7 @@ Convert the timestamp in the alert from ISO 8601 format to a unix epoch timestam
 """
 def timestamp_to_epoch(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('timestamp_to_epoch() called')
-    
+
     container_data_0 = phantom.collect2(container=container, datapath=['artifact:*.cef.ts', 'artifact:*.id'])
     literal_values_0 = [
         [
@@ -662,14 +652,17 @@ def timestamp_to_epoch(action=None, success=None, container=None, results=None, 
     parameters = []
 
     for item0 in container_data_0:
-        for item1 in literal_values_0:
-            parameters.append({
+        parameters.extend(
+            {
                 'input_datetime': item0[0],
                 'amount_to_modify': item1[0],
                 'modification_unit': None,
                 'input_format_string': None,
                 'output_format_string': None,
-            })
+            }
+            for item1 in literal_values_0
+        )
+
     ################################################################################
     ## Custom Code Start
     ################################################################################
@@ -690,7 +683,7 @@ Format another Splunk query to use the UID from the previous query to list all m
 """
 def format_connection_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_connection_query() called')
-    
+
     template = """%%
 index=corelight sourcetype=corelight_conn {0} | table *
 %%"""
@@ -711,7 +704,7 @@ Format a query to look for the metadata of files detected in the connection stre
 """
 def format_file_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_file_query() called')
-    
+
     template = """index=corelight sourcetype=corelight_files {0} | table tx_hosts{{}} rx_hosts{{}} filename mime_type source sha1"""
 
     # parameter list for template variable replacement
@@ -730,7 +723,7 @@ Format a note for the HTTP metadata.
 """
 def format_http_note(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_http_note() called')
-    
+
     template = """Timestamp = {0}
 HTTP Host = {1}
 URI = {2}

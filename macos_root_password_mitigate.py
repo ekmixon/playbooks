@@ -40,23 +40,23 @@ Use the sw_vers command to check the MacOS version.
 """
 def ssh_detect_high_sierra(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('execute_program_3() called')
-    
+
     success, message, macos_endpoints = phantom.get_list("macos_endpoints")
     phantom.debug("using the following ip addresses from the custom list:")
     phantom.debug(macos_endpoints)
 
-    parameters = []
-    
-    # build parameters list for 'execute_program_1' call
-    for macos_endpoint in macos_endpoints:
-        parameters.append({
+    parameters = [
+        {
             'ip_hostname': macos_endpoint[0],
             'command': "sw_vers",
             'timeout': "",
-    })
+        }
+        for macos_endpoint in macos_endpoints
+    ]
+
 
     phantom.act("execute program", parameters=parameters, assets=['ssh_macos_administrator'], callback=filter_1, name="ssh_detect_high_sierra")    
-    
+
     return
 
 """
@@ -87,26 +87,26 @@ Use nmap to syn-ack scan against TCP port 5900, which is the default for Apple R
 """
 def nmap_scan_5900(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('nmap_scan_5900() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'nmap_scan_5900' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'nmap_scan_5900' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'script': "",
-                'portlist': 5900,
-                'udp_scan': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script-args': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'script': "",
+            'portlist': 5900,
+            'udp_scan': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script-args': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="scan network", parameters=parameters, assets=['nmap'], callback=join_format_email_and_ticket, name="nmap_scan_5900")
 
@@ -117,25 +117,25 @@ Parse the dslocal plist to determine whether the root user is enabled. The passw
 """
 def ssh_parse_user_plist(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_parse_user_plist() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_parse_user_plist' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'ssh_parse_user_plist' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': "sudo plutil -p /private/var/db/dslocal/nodes/Default/users/root.plist | grep -A 1 \\\"passwd\\\"",
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': "sudo plutil -p /private/var/db/dslocal/nodes/Default/users/root.plist | grep -A 1 \\\"passwd\\\"",
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], callback=join_format_email_and_ticket, name="ssh_parse_user_plist")
 
@@ -146,25 +146,25 @@ Pull the raw plist because the passwordLastSetTime will not be parsed with the p
 """
 def ssh_raw_user_plist(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_raw_user_plist() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_raw_user_plist' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'ssh_raw_user_plist' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': "sudo cat /private/var/db/dslocal/nodes/Default/users/root.plist | grep --text -A 1 passwordLastSetTime",
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': "sudo cat /private/var/db/dslocal/nodes/Default/users/root.plist | grep --text -A 1 passwordLastSetTime",
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], callback=join_format_email_and_ticket, name="ssh_raw_user_plist")
 
@@ -175,25 +175,25 @@ Contact an administrator or analyst with all the gathered information.
 """
 def send_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_1' call
     formatted_data_1 = phantom.get_format_data(name='format_email_and_ticket')
 
-    parameters = []
-    
-    # build parameters list for 'send_email_1' call
-    parameters.append({
-        'cc': "",
-        'to': "admin@contoso.corp",
-        'bcc': "",
-        'body': formatted_data_1,
-        'from': "",
-        'headers': "",
-        'subject': "Phantom Automation - MacOS High Sierra Root Password Mitigation",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "admin@contoso.corp",
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "",
+            'headers': "",
+            'subject': "Phantom Automation - MacOS High Sierra Root Password Mitigation",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=macos_high_sierra_disable_ard, name="send_email_1")
 
@@ -204,20 +204,20 @@ Create a Zendesk ticket with all the gathered information.
 """
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
     formatted_data_1 = phantom.get_format_data(name='format_email_and_ticket')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'fields': "",
-        'subject': "MacOS High Sierra Root Password Mitigation",
-        'description': formatted_data_1,
-    })
+    parameters = [
+        {
+            'fields': "",
+            'subject': "MacOS High Sierra Root Password Mitigation",
+            'description': formatted_data_1,
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['zendesk'], callback=macos_high_sierra_set_root_password, name="create_ticket_1")
 
@@ -229,16 +229,17 @@ Proceed if the analyst responds Yes.
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["macos_high_sierra_disable_ard:action_result.summary.response", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "macos_high_sierra_disable_ard:action_result.summary.response",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         ssh_disable_ARD(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -250,16 +251,17 @@ Proceed if the analyst responds Yes.
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["macos_high_sierra_set_root_password:action_result.summary.response", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "macos_high_sierra_set_root_password:action_result.summary.response",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         format_osascript(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -270,7 +272,7 @@ Ask an analyst whether to disable ARD on the detected endpoints.
 """
 def macos_high_sierra_disable_ard(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('macos_high_sierra_disable_ard() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Would you like to disable ARD on the detected vulnerable MacOS High Sierra endpoints?
@@ -309,7 +311,7 @@ Ask an analyst whether to set the root password to a 40-character random string 
 """
 def macos_high_sierra_set_root_password(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('macos_high_sierra_set_root_password() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Would you like to set a random root password on the detected vulnerable MacOS High Sierra endpoints?
@@ -348,26 +350,26 @@ The first two tries of this command enable the root user and set the password. T
 """
 def ssh_try_root_once(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_try_root_once() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_try_root_once' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
     formatted_data_1 = phantom.get_format_data(name='format_osascript')
 
-    parameters = []
-    
-    # build parameters list for 'ssh_try_root_once' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': formatted_data_1,
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': formatted_data_1,
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], callback=ssh_try_root_twice, name="ssh_try_root_once")
 
@@ -378,26 +380,26 @@ The first two tries of this command enable the root user and set the password. T
 """
 def ssh_try_root_twice(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_try_root_twice() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_try_root_twice' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
     formatted_data_1 = phantom.get_format_data(name='format_osascript')
 
-    parameters = []
-    
-    # build parameters list for 'ssh_try_root_twice' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': formatted_data_1,
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': formatted_data_1,
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], callback=ssh_try_root_thrice, name="ssh_try_root_twice", parent_action=action)
 
@@ -408,26 +410,26 @@ The third try should succeed and just return a UID of 0.
 """
 def ssh_try_root_thrice(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_try_root_thrice() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_try_root_thrice' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
     formatted_data_1 = phantom.get_format_data(name='format_osascript')
 
-    parameters = []
-    
-    # build parameters list for 'ssh_try_root_thrice' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': formatted_data_1,
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': formatted_data_1,
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], name="ssh_try_root_thrice", parent_action=action)
 
@@ -438,25 +440,25 @@ Use the built-in perl script called "kickstart" to turn off all access to ARD, s
 """
 def ssh_disable_ARD(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ssh_disable_ARD() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ssh_disable_ARD' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname", "filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'ssh_disable_ARD' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'command': "sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -configure -access -off",
-                'timeout': "",
-                'ip_hostname': filtered_results_item_1[0],
-                'script_file': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': "sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -configure -access -off",
+            'timeout': "",
+            'ip_hostname': filtered_results_item_1[0],
+            'script_file': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="execute program", parameters=parameters, assets=['ssh_macos_administrator'], name="ssh_disable_ARD")
 
@@ -467,12 +469,12 @@ Compile the gathered information into a message used for both email and ticket c
 """
 def format_email_and_ticket(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_email_and_ticket() called')
-    
+
     high_sierra_ip_addrs = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:ssh_detect_high_sierra:action_result.parameter.ip_hostname'], action_results=results)
     nmap_results = phantom.collect2(container=container, datapath=['nmap_scan_5900:action_result.data.*.tcp.*.state'], action_results=results)
     parse_plist_results = phantom.collect2(container=container, datapath=['ssh_parse_user_plist:action_result.data.*.output'], action_results=results)
     raw_plist_results = phantom.collect2(container=container, datapath=['ssh_raw_user_plist:action_result.data.*.output'], action_results=results)
-    
+
     phantom.debug("high_sierra_ip_addrs")
     phantom.debug(high_sierra_ip_addrs)
     phantom.debug("nmap_results:")
@@ -481,17 +483,22 @@ def format_email_and_ticket(action=None, success=None, container=None, results=N
     phantom.debug(parse_plist_results)
     phantom.debug("raw_plist_results:")
     phantom.debug(raw_plist_results)
-    
+
     result_summaries = []
     for idx, val in enumerate(high_sierra_ip_addrs):
-        result_summary = {'ip_addr': val[0]}
-        result_summary['is_port_5900_open?'] = (nmap_results[idx][0] == 'open')
-        result_summary['is_root_pass_set?'] = ('***' in parse_plist_results[idx][0])
-        result_summary['last_root_pass_set_time'] = re.search('<real>(.*)</real>', raw_plist_results[idx][0]).group(1)
+        result_summary = {
+            'ip_addr': val[0],
+            'is_port_5900_open?': nmap_results[idx][0] == 'open',
+            'is_root_pass_set?': '***' in parse_plist_results[idx][0],
+            'last_root_pass_set_time': re.search(
+                '<real>(.*)</real>', raw_plist_results[idx][0]
+            )[1],
+        }
+
         result_summaries.append(result_summary)
-    
+
     phantom.debug(result_summaries)
-    
+
     template = """Phantom has detected the following endpoints running MacOS High Sierra:
 {0}
 
@@ -536,9 +543,9 @@ Prepare the SSH command to use osascript with a new root password.
 """
 def format_osascript(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_osascript() called')
-    
+
     new_root_password = base64.b64encode(os.urandom(30))
-    
+
     template = """osascript -e 'do shell script \"id\" with administrator privileges user name \"root\" password \"""" + new_root_password + """\"'"""
 
     # parameter list for template variable replacement

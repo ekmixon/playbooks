@@ -15,18 +15,15 @@ def on_start(container):
 
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
-    
+
     severity_param = container.get('severity', None)
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             [severity_param, "==", "high"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         ip_reputation_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -41,16 +38,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['greynoise'], name="ip_reputation_1")
 
@@ -62,16 +59,16 @@ def lookup_ip_1(action=None, success=None, container=None, results=None, handle=
     # collect data for 'lookup_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="lookup ip", parameters=parameters, assets=['greynoise'], name="lookup_ip_1")
 

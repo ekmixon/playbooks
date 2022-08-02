@@ -18,13 +18,10 @@ def gnql_query_1(action=None, success=None, container=None, results=None, handle
 
     # collect data for 'gnql_query_1' call
 
-    parameters = []
-    
-    # build parameters list for 'gnql_query_1' call
-    parameters.append({
-        'query': "classification:malicious metadata.rdns:*.gov*",
-        'size': 100,
-    })
+    parameters = [
+        {'query': "classification:malicious metadata.rdns:*.gov*", 'size': 100}
+    ]
+
 
     phantom.act(action="gnql query", parameters=parameters, assets=['greynoise'], callback=decision_1, name="gnql_query_1")
 
@@ -33,16 +30,17 @@ def gnql_query_1(action=None, success=None, container=None, results=None, handle
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["gnql_query_1:action_result.data.*.ip", "==", "artifact:*.cef.sourceAddress"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "gnql_query_1:action_result.data.*.ip",
+                "==",
+                "artifact:*.cef.sourceAddress",
+            ],
+        ],
+    ):
         promote_to_case_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         set_severity_3(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return

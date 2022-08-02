@@ -24,12 +24,7 @@ def list_users_azure_ad(action=None, success=None, container=None, results=None,
 
     # collect data for 'list_users_azure_ad' call
 
-    parameters = []
-    
-    # build parameters list for 'list_users_azure_ad' call
-    parameters.append({
-        'filter_string': "",
-    })
+    parameters = [{'filter_string': ""}]
 
     phantom.act(action="list users", parameters=parameters, assets=['azure_ad_graph'], callback=join_new_user_filter, name="list_users_azure_ad")
 
@@ -40,7 +35,7 @@ Create a time stamp to compare against for finding new users. Change the amount_
 """
 def cf_community_datetime_modify_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('cf_community_datetime_modify_1() called')
-    
+
     literal_values_0 = [
         [
             -7,
@@ -49,16 +44,18 @@ def cf_community_datetime_modify_1(action=None, success=None, container=None, re
         ],
     ]
 
-    parameters = []
-
-    for item0 in literal_values_0:
-        parameters.append({
+    parameters = [
+        {
             'input_datetime': None,
             'amount_to_modify': item0[0],
             'modification_unit': item0[1],
             'input_format_string': None,
             'output_format_string': item0[2],
-        })
+        }
+        for item0 in literal_values_0
+    ]
+
+
     ################################################################################
     ## Custom Code Start
     ################################################################################
@@ -111,7 +108,7 @@ Format a $filter for Microsoft Graph to match the userPrincipalName
 """
 def format_graph_filter(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_graph_filter() called')
-    
+
     template = """%%
 userPrincipalName eq '{0}'
 %%"""
@@ -132,20 +129,20 @@ Identify the corresponding user in the Microsoft Graph
 """
 def list_users_ms_graph(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('list_users_ms_graph() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'list_users_ms_graph' call
     formatted_data_1 = phantom.get_format_data(name='format_graph_filter__as_list')
 
-    parameters = []
-    
-    # build parameters list for 'list_users_ms_graph' call
-    for formatted_part_1 in formatted_data_1:
-        parameters.append({
+    parameters = [
+        {
             'limit': "",
             'filter': formatted_part_1,
-        })
+        }
+        for formatted_part_1 in formatted_data_1
+    ]
+
 
     phantom.act(action="list users", parameters=parameters, assets=['ms_graph_o365'], callback=match_users, name="list_users_ms_graph")
 
@@ -178,7 +175,7 @@ Gather the most important fields to present in a note
 """
 def format_note(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_note() called')
-    
+
     template = """New users:
 
 %%
@@ -230,32 +227,32 @@ Save the userPrincipalName of each user as an artifact to allow further investig
 """
 def save_user_artifacts(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('save_user_artifacts() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     id_value = container.get('id', None)
 
     # collect data for 'save_user_artifacts' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:match_users:condition_1:list_users_ms_graph:action_result.data.*.userPrincipalName", "filtered-data:match_users:condition_1:list_users_ms_graph:action_result.data.*.id", "filtered-data:match_users:condition_1:list_users_ms_graph:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'save_user_artifacts' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[1]:
-            parameters.append({
-                'name': "New Azure User",
-                'label': "user",
-                'cef_name': "userPrincipalName",
-                'contains': "azure user principal name",
-                'cef_value': filtered_results_item_1[0],
-                'container_id': id_value,
-                'cef_dictionary': "",
-                'run_automation': False,
-                'source_data_identifier': filtered_results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[2]},
-            })
+    parameters = [
+        {
+            'name': "New Azure User",
+            'label': "user",
+            'cef_name': "userPrincipalName",
+            'contains': "azure user principal name",
+            'cef_value': filtered_results_item_1[0],
+            'container_id': id_value,
+            'cef_dictionary': "",
+            'run_automation': False,
+            'source_data_identifier': filtered_results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[2]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[1]
+    ]
+
 
     phantom.act(action="add artifact", parameters=parameters, assets=['phantom'], name="save_user_artifacts")
 

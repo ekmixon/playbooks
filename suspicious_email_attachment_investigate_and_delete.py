@@ -48,23 +48,23 @@ Delete the suspicious email from the user's inbox.
 """
 def delete_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('delete_email_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'delete_email_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_email_1:action_result.parameter.id', 'get_email_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'delete_email_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'id': results_item_1[0],
-                'email': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'id': results_item_1[0],
+            'email': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="delete email", parameters=parameters, assets=['exchange'], name="delete_email_1")
 
@@ -75,25 +75,25 @@ Send an email to the analyst for this event notifying them that the playbook is 
 """
 def send_analyst_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_analyst_email() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_analyst_email' call
     formatted_data_1 = phantom.get_format_data(name='format_analyst_message')
 
-    parameters = []
-    
-    # build parameters list for 'send_analyst_email' call
-    parameters.append({
-        'cc': "",
-        'to': "charlie@corp.contoso.com",
-        'bcc': "",
-        'body': formatted_data_1,
-        'from': "charlie@corp.contoso.com",
-        'headers': "",
-        'subject': "Splunk detected suspicious email",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "charlie@corp.contoso.com",
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "charlie@corp.contoso.com",
+            'headers': "",
+            'subject': "Splunk detected suspicious email",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['exchange_smtp'], name="send_analyst_email")
 
@@ -104,20 +104,20 @@ Detonate the file attachment in a sandbox to determine its behavior.
 """
 def detonate_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('detonate_file_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     extract_attachment_info__vault_id = json.loads(phantom.get_run_data(key='extract_attachment_info:vault_id'))
     extract_attachment_info__attachment_file_name = json.loads(phantom.get_run_data(key='extract_attachment_info:attachment_file_name'))
     # collect data for 'detonate_file_1' call
 
-    parameters = []
-    
-    # build parameters list for 'detonate_file_1' call
-    parameters.append({
-        'vault_id': extract_attachment_info__vault_id,
-        'file_name': extract_attachment_info__attachment_file_name,
-    })
+    parameters = [
+        {
+            'vault_id': extract_attachment_info__vault_id,
+            'file_name': extract_attachment_info__attachment_file_name,
+        }
+    ]
+
 
     phantom.act(action="detonate file", parameters=parameters, assets=['cuckoo'], callback=detonate_file_1_callback, name="detonate_file_1")
 
@@ -136,7 +136,7 @@ Build the body of an email to the recipient explaining that a suspicious email w
 """
 def format_recipient_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_recipient_email() called')
-    
+
     template = """The security department has detected a malicious phishing email sent to this email address from {0} with the subject \"{1}\". The email has been deleted. Please contact the security department if you have any questions."""
 
     # parameter list for template variable replacement
@@ -156,30 +156,30 @@ Send an email to the recipient explaining that a suspicious email was deleted.
 """
 def send_recipient_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_recipient_email() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_recipient_email' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_email_1:action_result.data.*.t_ToRecipients.t_Mailbox.*.t_EmailAddress', 'get_email_1:action_result.parameter.context.artifact_id'], action_results=results)
     formatted_data_1 = phantom.get_format_data(name='format_recipient_email')
 
-    parameters = []
-    
-    # build parameters list for 'send_recipient_email' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'cc': "",
-                'to': results_item_1[0],
-                'bcc': "",
-                'body': formatted_data_1,
-                'from': "phantom",
-                'headers': "",
-                'subject': "Phishing Email Deleted",
-                'attachments': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'cc': "",
+            'to': results_item_1[0],
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "phantom",
+            'headers': "",
+            'subject': "Phishing Email Deleted",
+            'attachments': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['exchange_smtp'], name="send_recipient_email")
 
@@ -190,7 +190,7 @@ Wait for an analyst to decide whether or not to delete the email from the user's
 """
 def suspicious_email_attachment_prompt(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('suspicious_email_attachment_prompt() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Administrator"
     message = """Please review the investigation and decide whether or not to delete the email from the user's inbox."""
@@ -218,7 +218,7 @@ Gather all the key pieces of information collected so far and format them for an
 """
 def format_analyst_message(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_analyst_message() called')
-    
+
     template = """A Splunk correlation search discovered a suspicious email file attachment:
 
 email sender: {0}
@@ -284,11 +284,8 @@ def get_email_1(action=None, success=None, container=None, results=None, handle=
     # collect data for 'get_email_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.message_id', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'get_email_1' call
-    for container_item in container_data:
-        parameters.append({
+    parameters = [
+        {
             'id': container_item[0],
             'email': "",
             'vault_id': "",
@@ -297,7 +294,10 @@ def get_email_1(action=None, success=None, container=None, results=None, handle=
             'use_current_container': True,
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': container_item[1]},
-        })
+        }
+        for container_item in container_data
+    ]
+
 
     phantom.act(action="get email", parameters=parameters, assets=['exchange'], callback=extract_attachment_info, name="get_email_1")
 
@@ -308,7 +308,7 @@ Extract the vault ID and attachment filename to use in "detonate file" and other
 """
 def extract_attachment_info(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('extract_attachment_info() called')
-    
+
     id_value = container.get('id', None)
 
     extract_attachment_info__vault_id = None
@@ -321,11 +321,14 @@ def extract_attachment_info(action=None, success=None, container=None, results=N
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.vaultId', 'artifact:*.cef.fileName', 'artifact:*.id'], scope='all')
     for container_item in container_data:
         if container_item[0]:
-            phantom.debug("found file with vaultId: {}".format(container_item[0]))
+            phantom.debug(f"found file with vaultId: {container_item[0]}")
             extract_attachment_info__vault_id = container_item[0]
             extract_attachment_info__attachment_file_name = container_item[1]
 
-    phantom.debug("detonating file with vaultId: {}".format(extract_attachment_info__vault_id))
+    phantom.debug(
+        f"detonating file with vaultId: {extract_attachment_info__vault_id}"
+    )
+
 
     ################################################################################
     ## Custom Code End
@@ -342,22 +345,22 @@ Check the reputation of URLs requested by the file attachment when it executed i
 """
 def url_reputation(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('url_reputation() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'url_reputation' call
     results_data_1 = phantom.collect2(container=container, datapath=['detonate_file_1:action_result.data.*.report.network.http.*.uri', 'detonate_file_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'url_reputation' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'url': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="url reputation", parameters=parameters, assets=['virustotal'], callback=url_reputation_callback, name="url_reputation", parent_action=action)
 
@@ -376,22 +379,22 @@ Check the reputation of IP addresses contacted by the file attachment when it ex
 """
 def ip_reputation(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ip_reputation() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ip_reputation' call
     results_data_1 = phantom.collect2(container=container, datapath=['detonate_file_1:action_result.data.*.report.network.dns.*.answers.*.data', 'detonate_file_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['symantec_deepsight'], callback=filter_deepsight_behaviours, name="ip_reputation", parent_action=action)
 
@@ -426,7 +429,7 @@ Build a Splunk search to check for other systems receiving DNS answers matching 
 """
 def format_dns_search(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_dns_search() called')
-    
+
     template = """%%
 | datamodel Network_Resolution search | search DNS.answer=\"{0}\"
 %%"""
@@ -468,7 +471,7 @@ Build a Splunk search to check for HTTP requests to the potentially malicious UR
 """
 def format_web_search(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_web_search() called')
-    
+
     template = """%%
 | datamodel Web search | search Web.url=\"{0}\"
 %%"""
@@ -489,22 +492,22 @@ Run a Splunk search to check for HTTP requests to the potentially malicious URLs
 """
 def run_web_search(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_web_search() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_web_search' call
     formatted_data_1 = phantom.get_format_data(name='format_web_search__as_list')
 
-    parameters = []
-    
-    # build parameters list for 'run_web_search' call
-    for formatted_part_1 in formatted_data_1:
-        parameters.append({
+    parameters = [
+        {
             'query': formatted_part_1,
             'command': "",
             'display': "",
             'parse_only': "",
-        })
+        }
+        for formatted_part_1 in formatted_data_1
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_format_analyst_message, name="run_web_search")
 
@@ -515,22 +518,22 @@ Run a Splunk search to check for other systems receiving DNS answers matching th
 """
 def run_dns_search(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_dns_search() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_dns_search' call
     formatted_data_1 = phantom.get_format_data(name='format_dns_search__as_list')
 
-    parameters = []
-    
-    # build parameters list for 'run_dns_search' call
-    for formatted_part_1 in formatted_data_1:
-        parameters.append({
+    parameters = [
+        {
             'query': formatted_part_1,
             'command': "",
             'display': "",
             'parse_only': "",
-        })
+        }
+        for formatted_part_1 in formatted_data_1
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_format_analyst_message, name="run_dns_search")
 
@@ -541,7 +544,7 @@ Gather the key results from the URL reputation  query into a formatted text bloc
 """
 def format_url_reputation(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_url_reputation() called')
-    
+
     template = """VirusTotal scores of URLs detected in file detonation:
 
 %%
@@ -568,7 +571,7 @@ Gather together the key fields from the results of the IP reputation query for a
 """
 def format_ip_reputation(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ip_reputation() called')
-    
+
     template = """Symantec DeepSight analysis of IP addresses detected in file detonation:
 
 %%
@@ -595,7 +598,7 @@ Defang the URLs by substituting hXXp fot http and [.] for . to prevent notificat
 """
 def defang_url(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('defang_url() called')
-    
+
     results_data_1 = phantom.collect2(container=container, datapath=['url_reputation:action_result.parameter.url'], action_results=results)
     results_item_1_0 = [item[0] for item in results_data_1]
 
@@ -606,11 +609,11 @@ def defang_url(action=None, success=None, container=None, results=None, handle=N
     ################################################################################
 
     defang_url__defanged_url = []
-    
+
     phantom.debug("defanging URLs:")
     for url in results_item_1_0:
         defanged_url = url.replace("http", "hXXp").replace(".", "[.]")
-        phantom.debug("defanged {} into {}".format(url, defanged_url))
+        phantom.debug(f"defanged {url} into {defanged_url}")
         defang_url__defanged_url.append(defanged_url)
 
     ################################################################################
@@ -627,7 +630,7 @@ Collect and format the behavioral information from Deepsight relating to the que
 """
 def format_behaviors(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_behaviors() called')
-    
+
     filtered_results_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_deepsight_behaviours:condition_1:ip_reputation:action_result.data.*.behaviours'])
     filtered_results_item_1_0 = [item[0] for item in filtered_results_data_1]
 
@@ -639,14 +642,15 @@ def format_behaviors(action=None, success=None, container=None, results=None, ha
 
     format_behaviors__behaviors = []
     for ip in filtered_results_item_1_0:
-        behavior = ""
         lines = json.dumps(ip, indent=4).split('\n')
-        for line in lines:
-            # only use the lines with keys and values, not the json {} and [] characters
-            if 1 not in [c in line for c in '{}[]']:
-                behavior += line + '\n'
+        behavior = "".join(
+            line + '\n'
+            for line in lines
+            if 1 not in [c in line for c in '{}[]']
+        )
+
         format_behaviors__behaviors.append(behavior)
-    
+
     phantom.debug('Symantec Deepsight behaviors:')
     phantom.debug(format_behaviors__behaviors)
 

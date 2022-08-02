@@ -20,17 +20,17 @@ def container_update(container_input=None, name=None, description=None, label=No
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
+
     outputs = {}
     update_dict = {}
-    
+
     if isinstance(container_input, int):
         container = phantom.get_container(container_input)
     elif isinstance(container_input, dict):
         container = container_input
     else:
         raise TypeError("container_input is neither a int or a dictionary")
-    
+
     if name:
         update_dict['name'] = name
     if description:
@@ -72,14 +72,14 @@ def container_update(container_input=None, name=None, description=None, label=No
         json_dict = json.loads(input_json)
         # Merge dictionaries together. The second argument, "**json_dict" will take precedence and overwrite any duplicate parameters.
         update_dict = {**update_dict, **json_dict}
-    
+
     if update_dict:
         phantom.debug('Updating container {0} with the following information: "{1}"'.format(container['id'], update_dict))
         phantom.update(container, update_dict)
     else:
         phantom.debug("Valid container entered but no valid container changes provided.")
-        
-    
+
+
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable
     return outputs

@@ -22,18 +22,18 @@ def get_user_attributes_1(action=None, success=None, container=None, results=Non
     # collect data for 'get_user_attributes_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceUserName', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'get_user_attributes_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'fields': "",
-                'username': container_item[0],
-                'attribute': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'fields': "",
+            'username': container_item[0],
+            'attribute': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="get user attributes", parameters=parameters, assets=['domainctrl1'], callback=format_ticket_description, name="get_user_attributes_1")
 
@@ -41,22 +41,22 @@ def get_user_attributes_1(action=None, success=None, container=None, results=Non
 
 def reset_password_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_password_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'reset_password_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['disable_user_1:action_result.parameter.username', 'disable_user_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'reset_password_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'username': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="reset password", parameters=parameters, assets=['domainctrl1'], callback=create_ticket_2, name="reset_password_1", parent_action=action)
 
@@ -64,22 +64,22 @@ def reset_password_1(action=None, success=None, container=None, results=None, ha
 
 def create_ticket_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_2' call
     formatted_data_1 = phantom.get_format_data(name='format_ticket_description')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_2' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Malicious Insider Flagged - User Disabled and Password Reset",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Malicious Insider Flagged - User Disabled and Password Reset",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_set_status_1, name="create_ticket_2", parent_action=action)
 
@@ -87,22 +87,22 @@ def create_ticket_2(action=None, success=None, container=None, results=None, han
 
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
     formatted_data_1 = phantom.get_format_data(name='format_ticket_description')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Malicious Insider Identified - No Action Taken",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Malicious Insider Identified - No Action Taken",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_set_status_1, name="create_ticket_1")
 
@@ -111,16 +111,13 @@ def create_ticket_1(action=None, success=None, container=None, results=None, han
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         disable_user_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -131,7 +128,7 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """The following user has been flagged as a malicious insider:
@@ -166,7 +163,7 @@ Response should be: Yes/No"""
 
 def task_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('task_1() called')
-    
+
     # set user and message variables for phantom.task call
     user = "admin"
     message = """Please notify the HR department of this malicious insider event."""
@@ -198,22 +195,22 @@ def join_set_status_1(action=None, success=None, container=None, results=None, h
 
 def disable_user_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('disable_user_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'disable_user_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_user_attributes_1:action_result.parameter.username', 'get_user_attributes_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'disable_user_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'username': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="disable user", parameters=parameters, assets=['domainctrl1'], callback=reset_password_1, name="disable_user_1")
 
@@ -224,7 +221,7 @@ Prepare the action results from the user lookup for the ticketing system.
 """
 def format_ticket_description(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ticket_description() called')
-    
+
     template = """The following is a dump of the attributes associated with the malicious user: 
 {0}"""
 

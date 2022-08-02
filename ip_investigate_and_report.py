@@ -11,10 +11,15 @@ from datetime import datetime, timedelta
 import ipaddress
 def ipfilter(ip):
     ranges =  ['192.168.0.0/24',]
-    for item in ranges:
-        if phantom.is_ip(ip) and ipaddress.ip_address(ip) not in ipaddress.ip_network(item):
-            return ip
-    return None
+    return next(
+        (
+            ip
+            for item in ranges
+            if phantom.is_ip(ip)
+            and ipaddress.ip_address(ip) not in ipaddress.ip_network(item)
+        ),
+        None,
+    )
 
 # End - Global Code block
 ##############################
@@ -29,22 +34,22 @@ def on_start(container):
 
 def whois_ip_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_ip_3() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_ip_3' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["ip_reputation_1:filtered-action_result.parameter.ip", "ip_reputation_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_3' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'ip': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['domaintools'], callback=join_send_email_bad_ip, name="whois_ip_3")
 
@@ -56,16 +61,16 @@ def reverse_ip_2(action=None, success=None, container=None, results=None, handle
     # collect data for 'reverse_ip_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'reverse_ip_2' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="reverse ip", parameters=parameters, assets=['domaintools'], callback=domain_reputation_2, name="reverse_ip_2")
 
@@ -73,24 +78,24 @@ def reverse_ip_2(action=None, success=None, container=None, results=None, handle
 
 def run_query_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_query_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_query_2' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["domain_reputation_2:filtered-action_result.parameter.domain", "domain_reputation_2:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'run_query_2' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        parameters.append({
+    parameters = [
+        {
             'command': "search",
             'query': passed_filtered_results_item_1[0],
             'display': "",
             'parse_only': "",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': passed_filtered_results_item_1[1]},
-        })
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_send_email_bad_domain, name="run_query_2")
 
@@ -139,16 +144,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], callback=ip_reputation_1_callback, name="ip_reputation_1")
 
@@ -171,24 +176,24 @@ def set_severity_1(action=None, success=None, container=None, results=None, hand
 
 def send_email_safe(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_safe() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_safe' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_safe' call
-    parameters.append({
-        'cc': "",
-        'to': "michael@phantom.us",
-        'bcc': "",
-        'body': "A safe port scan was detected, see Phantom for details.",
-        'from': "admin@phantom.us",
-        'headers': "",
-        'subject': "Port Scan determined safe",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "michael@phantom.us",
+            'bcc': "",
+            'body': "A safe port scan was detected, see Phantom for details.",
+            'from': "admin@phantom.us",
+            'headers': "",
+            'subject': "Port Scan determined safe",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=set_severity_2, name="send_email_safe")
 
@@ -207,24 +212,24 @@ def join_send_email_safe(action=None, success=None, container=None, results=None
 
 def send_email_unknown(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_unknown() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_unknown' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_unknown' call
-    parameters.append({
-        'cc': "",
-        'to': "notifications@phantom.us",
-        'bcc': "",
-        'body': "Please see the results of the phantom PB run",
-        'from': "notifications@phantom.us",
-        'headers': "",
-        'subject': "Unknown Domain Port Scan",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "notifications@phantom.us",
+            'bcc': "",
+            'body': "Please see the results of the phantom PB run",
+            'from': "notifications@phantom.us",
+            'headers': "",
+            'subject': "Unknown Domain Port Scan",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=set_severity_5, name="send_email_unknown")
 
@@ -245,24 +250,24 @@ def filter_2(action=None, success=None, container=None, results=None, handle=Non
 
 def send_email_bad_domain(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_bad_domain() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_bad_domain' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_bad_domain' call
-    parameters.append({
-        'cc': "",
-        'to': "notifications@phantom.us",
-        'bcc': "",
-        'body': "Check phantom to see output results for bad port scan.",
-        'from': "notifications@phantom.us",
-        'headers': "",
-        'subject': "Port Scan detected from bad domain",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "notifications@phantom.us",
+            'bcc': "",
+            'body': "Check phantom to see output results for bad port scan.",
+            'from': "notifications@phantom.us",
+            'headers': "",
+            'subject': "Port Scan detected from bad domain",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=set_severity_4, name="send_email_bad_domain")
 
@@ -367,22 +372,22 @@ def filter_3(action=None, success=None, container=None, results=None, handle=Non
 
 def hunt_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('hunt_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'hunt_ip_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["ip_reputation_1:filtered-action_result.parameter.ip", "ip_reputation_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'hunt_ip_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'ip': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="hunt ip", parameters=parameters, assets=['isightpartners'], callback=join_send_email_bad_ip, name="hunt_ip_1")
 
@@ -390,22 +395,22 @@ def hunt_ip_1(action=None, success=None, container=None, results=None, handle=No
 
 def whois_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_domain_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_domain_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["domain_reputation_2:filtered-action_result.parameter.domain", "domain_reputation_2:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_domain_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'domain': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="whois domain", parameters=parameters, assets=['domaintools'], callback=join_send_email_bad_domain, name="whois_domain_1")
 
@@ -413,22 +418,22 @@ def whois_domain_1(action=None, success=None, container=None, results=None, hand
 
 def hunt_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('hunt_domain_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'hunt_domain_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["domain_reputation_2:filtered-action_result.parameter.domain", "domain_reputation_2:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'hunt_domain_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'domain': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="hunt domain", parameters=parameters, assets=['isightpartners'], callback=join_send_email_bad_domain, name="hunt_domain_1")
 
@@ -436,25 +441,25 @@ def hunt_domain_1(action=None, success=None, container=None, results=None, handl
 
 def run_query_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('run_query_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'run_query_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["ip_reputation_1:filtered-action_result.parameter.ip", "ip_reputation_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'run_query_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'command': "search",
-                'query': passed_filtered_results_item_1[0],
-                'display': "",
-                'parse_only': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'command': "search",
+            'query': passed_filtered_results_item_1[0],
+            'display': "",
+            'parse_only': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_send_email_bad_ip, name="run_query_1")
 
@@ -462,24 +467,24 @@ def run_query_1(action=None, success=None, container=None, results=None, handle=
 
 def send_email_bad_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_bad_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_bad_ip' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_bad_ip' call
-    parameters.append({
-        'cc': "",
-        'to': "michael@phantom.us",
-        'bcc': "",
-        'body': "Check phantom to see output results for bad port scan.",
-        'from': "admin@phantom.us",
-        'headers': "",
-        'subject': "Port Scan detected from bad IP",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "michael@phantom.us",
+            'bcc': "",
+            'body': "Check phantom to see output results for bad port scan.",
+            'from': "admin@phantom.us",
+            'headers': "",
+            'subject': "Port Scan detected from bad IP",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], callback=set_severity_1, name="send_email_bad_ip")
 
@@ -497,31 +502,32 @@ def join_send_email_bad_ip(action=None, success=None, container=None, results=No
     return
 
 def domain_reputation_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'domain_reputation_2' call
     results_data_1 = phantom.collect2(container=container, datapath=['reverse_ip_2:action_result.data.*.ip_addresses.domain_names', 'reverse_ip_2:action_result.parameter.context.artifact_id'], action_results=results)
 
     parameters = []
-    
+
     # build parameters list for 'domain_reputation_2' call
     for results_item_1 in results_data_1:
         if results_item_1[0]:
-            for domain in results_item_1[0]:
-                if (not domain):
-                    continue
-                parameters.append({
+            parameters.extend(
+                {
                     'domain': domain,
                     # context (artifact id) is added to associate results with the artifact
                     'context': {'artifact_id': results_item_1[1]},
-                })
+                }
+                for domain in results_item_1[0]
+                if domain
+            )
 
     if parameters:
         phantom.act("domain reputation", parameters=parameters, assets=['virustotal'], callback=domain_reputation_2_callback, name="domain_reputation_2", parent_action=action)    
     else:
         phantom.error("'domain_reputation_2' will not be executed due to lack of parameters")
-    
+
     return
 
 def domain_reputation_2_callback(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None):

@@ -41,16 +41,16 @@ def list_serviceaccountkey_1(action=None, success=None, container=None, results=
     # collect data for 'list_serviceaccountkey_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceUserId', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'list_serviceaccountkey_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'account': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'account': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="list serviceaccountkey", parameters=parameters, assets=['gcp_iam'], callback=format_key_info_1, name="list_serviceaccountkey_1")
 
@@ -61,7 +61,7 @@ Format information about each service account key so it can be used in a prompt.
 """
 def format_key_info_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_key_info_1() called')
-    
+
     template = """%%
 Key Name: {0}
 Key Type: {1}
@@ -93,7 +93,7 @@ Use the formatted messages to prompt the analyst.
 """
 def gcp_unusual_usage_keys_and_vm(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('gcp_unusual_usage_keys_and_vm() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Unusual Google Cloud Compute Engine activity was detected. The service account in use has the following service account keys:
@@ -160,23 +160,23 @@ Delete each of the offending service account keys.
 """
 def delete_keys_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('delete_keys_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'delete_keys_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['list_serviceaccountkey_1:action_result.data.0.keys.*.name', 'list_serviceaccountkey_1:action_result.parameter.account', 'list_serviceaccountkey_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'delete_keys_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0] and results_item_1[1]:
-            parameters.append({
-                'key': results_item_1[0],
-                'account': results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'key': results_item_1[0],
+            'account': results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0] and results_item_1[1]
+    ]
+
 
     phantom.act(action="delete serviceaccountkey", parameters=parameters, assets=['gcp_iam'], name="delete_keys_1")
 
@@ -191,17 +191,17 @@ def describe_instance_1(action=None, success=None, container=None, results=None,
     # collect data for 'describe_instance_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.data_resource_labels_zone', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'describe_instance_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'id': "",
-                'zone': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'id': "",
+            'zone': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="describe instance", parameters=parameters, assets=['gcp_compute'], callback=format_vm_info, name="describe_instance_1")
 
@@ -217,32 +217,26 @@ Check the event for the service account ID and compute instance ID needed to run
 def artifact_check(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('artifact_check() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.sourceUserId", "!=", ""],
             ["artifact:*.cef.data_resource_labels_instance_id", "!=", ""],
         ],
-        logical_operator='and')
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        logical_operator='and',
+    ):
         list_serviceaccountkey_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         describe_instance_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.sourceUserId", "!=", ""],
             ["artifact:*.cef.data_resource_labels_instance_id", "==", ""],
         ],
-        logical_operator='and')
-
-    # call connected blocks if condition 2 matched
-    if matched:
+        logical_operator='and',
+    ):
         list_serviceaccountkey_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -260,16 +254,16 @@ def list_serviceaccountkey_2(action=None, success=None, container=None, results=
     # collect data for 'list_serviceaccountkey_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceUserId', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'list_serviceaccountkey_2' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'account': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'account': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="list serviceaccountkey", parameters=parameters, assets=['gcp_iam'], callback=format_key_info_2, name="list_serviceaccountkey_2")
 
@@ -280,7 +274,7 @@ Format key fields from the compute instance metadata so they can be displayed in
 """
 def format_vm_info(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_vm_info() called')
-    
+
     template = """Instance ID: {0}
 Instance Name: {1}
 Machine Type: {2}
@@ -305,7 +299,7 @@ Format information about each service account key so it can be used in a prompt.
 """
 def format_key_info_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_key_info_2() called')
-    
+
     template = """%%
 Key Name: {0}
 Key Type: {1}
@@ -338,16 +332,17 @@ Check the prompt response.
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["gcp_unusual_usage_keys_and_vm:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "gcp_unusual_usage_keys_and_vm:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         delete_keys_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -359,16 +354,17 @@ Check the prompt response.
 def decision_4(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_4() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["gcp_unusual_usage_keys_and_vm:action_result.summary.responses.1", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "gcp_unusual_usage_keys_and_vm:action_result.summary.responses.1",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         stop_instance_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -379,23 +375,23 @@ Stop the compute instance referenced in the event.
 """
 def stop_instance_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('stop_instance_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'stop_instance_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['describe_instance_1:action_result.parameter.zone', 'describe_instance_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'stop_instance_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'id': "",
-                'zone': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'id': "",
+            'zone': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="stop instance", parameters=parameters, assets=['gcp_compute'], name="stop_instance_1")
 
@@ -406,7 +402,7 @@ Use the formatted messages to prompt the analyst.
 """
 def gcp_unusual_usage_keys(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('gcp_unusual_usage_keys() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Unusual Google Cloud Compute Engine activity was detected. The service account in use has the following service account keys:
@@ -438,16 +434,17 @@ Check the prompt response.
 def decision_5(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_5() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["gcp_unusual_usage_keys:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "gcp_unusual_usage_keys:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         delete_keys_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -458,23 +455,23 @@ Delete each of the offending service account keys.
 """
 def delete_keys_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('delete_keys_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'delete_keys_2' call
     results_data_1 = phantom.collect2(container=container, datapath=['list_serviceaccountkey_2:action_result.data.0.keys.*.name', 'list_serviceaccountkey_2:action_result.parameter.account', 'list_serviceaccountkey_2:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'delete_keys_2' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0] and results_item_1[1]:
-            parameters.append({
-                'key': results_item_1[0],
-                'account': results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'key': results_item_1[0],
+            'account': results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0] and results_item_1[1]
+    ]
+
 
     phantom.act(action="delete serviceaccountkey", parameters=parameters, assets=['gcp_iam'], name="delete_keys_2")
 

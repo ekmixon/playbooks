@@ -123,22 +123,22 @@ def filter_7(action=None, success=None, container=None, results=None, handle=Non
 
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
     formatted_data_1 = phantom.get_format_data(name='format_ticket_description')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Wanna Cry Hunting Campaign Result",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Wanna Cry Hunting Campaign Result",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], name="create_ticket_1")
 
@@ -146,24 +146,24 @@ def create_ticket_1(action=None, success=None, container=None, results=None, han
 
 def list_connections_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('list_connections_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'list_connections_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['list_endpoints_1:action_result.data.*.ips', 'list_endpoints_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'list_connections_1' call
-    for results_item_1 in results_data_1:
-        parameters.append({
+    parameters = [
+        {
             'pid': "",
             'ip_hostname': results_item_1[0],
             'process_name': "",
             'carbonblack_process_id': "",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': results_item_1[1]},
-        })
+        }
+        for results_item_1 in results_data_1
+    ]
+
 
     phantom.act(action="list connections", parameters=parameters, assets=['carbonblack'], callback=filter_matching_IP, name="list_connections_1")
 
@@ -180,22 +180,22 @@ def list_endpoints_1(action=None, success=None, container=None, results=None, ha
 
 def get_system_info_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_system_info_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_system_info_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['hunt_file_1:action_result.data.*.process.results.*.sensor_id', 'hunt_file_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_system_info_1' call
-    for results_item_1 in results_data_1:
-        parameters.append({
+    parameters = [
+        {
             'sensor_id': results_item_1[0],
             'ip_hostname': "",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': results_item_1[1]},
-        })
+        }
+        for results_item_1 in results_data_1
+    ]
+
 
     phantom.act(action="get system info", parameters=parameters, assets=['carbonblack'], callback=filter_6, name="get_system_info_1", parent_action=action)
 
@@ -207,19 +207,19 @@ def hunt_file_1(action=None, success=None, container=None, results=None, handle=
     # get custom list for wannacry_hashes
     cl_wannacry_hashes = phantom.datastore_get('wannacry_hashes')
 
-    parameters = []
-    
-    # build parameters list for 'hunt_file_1' call
-    for wannacry_hash in cl_wannacry_hashes:
-        if wannacry_hash:
-            parameters.append({
-                'hash': wannacry_hash,
-                'range': "",
-                'type': "",
-            })
+    parameters = [
+        {
+            'hash': wannacry_hash,
+            'range': "",
+            'type': "",
+        }
+        for wannacry_hash in cl_wannacry_hashes
+        if wannacry_hash
+    ]
+
 
     phantom.act("hunt file", parameters=parameters, assets=['carbonblack'], callback=get_system_info_1, name="hunt_file_1")    
-    
+
     return
 
 def filter_matching_IP(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
@@ -263,7 +263,7 @@ List the IP addresses and file hashes in a formatted paragraph for the ticket de
 """
 def format_ticket_description(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ticket_description() called')
-    
+
     template = """The following endpoints have active connections with IP addresses associated with wannacry: 
 {0}
 

@@ -16,15 +16,12 @@ def on_start(container):
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["classification", "==", "malicious"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         set_severity_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 

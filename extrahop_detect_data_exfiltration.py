@@ -18,24 +18,24 @@ Look up all of the protocols the device that triggered the anomaly communicated 
 """
 def get_protocols_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_protocols_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_protocols_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_device_info_1:action_result.data.*.ipaddr4', 'get_device_info_1:action_result.data.*.id', 'get_device_info_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_protocols_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'minutes': 30,
-                'eh_api_id': results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'minutes': 30,
+            'eh_api_id': results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get protocols", parameters=parameters, assets=['extrahop'], name="get_protocols_1", parent_action=action)
 
@@ -47,15 +47,12 @@ Continue running this playbook only if the artifact label is "data_exfiltration"
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.label", "==", "data_exfiltration"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         get_device_info_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -70,16 +67,16 @@ def get_device_info_1(action=None, success=None, container=None, results=None, h
     # collect data for 'get_device_info_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'get_device_info_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="get device info", parameters=parameters, assets=['extrahop'], callback=get_device_info_1_callback, name="get_device_info_1")
 
@@ -98,26 +95,26 @@ Look up all of the peers acting as a client in the last 30 minutes for the devic
 """
 def get_peers_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_peers_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_peers_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_device_info_1:action_result.data.*.ipaddr4', 'get_device_info_1:action_result.data.*.id', 'get_device_info_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_peers_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'minutes': 30,
-                'protocol': "any",
-                'eh_api_id': results_item_1[1],
-                'peer_role': "client",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'minutes': 30,
+            'protocol': "any",
+            'eh_api_id': results_item_1[1],
+            'peer_role': "client",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get peers", parameters=parameters, assets=['extrahop'], callback=internal_ip_filter, name="get_peers_1", parent_action=action)
 
@@ -128,7 +125,7 @@ Assign a manual task to do further investigation into the Data Exfiltration anom
 """
 def task_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('task_1() called')
-    
+
     # set user and message variables for phantom.task call
     user = "admin"
     message = """ExtraHop Addy has detected a data exfiltration anomaly on your network and Phantom has confirmed via Anomali ThreatStream that the source address has connected with one or more known-bad external IP addresses in the last 30 minutes."""
@@ -166,24 +163,24 @@ Tag the device in ExtraHop with the "bad_ip_reputation" tag
 """
 def tag_device_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('tag_device_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'tag_device_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:linking_filter:condition_1:get_peers_1:action_result.data.*.ipaddr4", "filtered-data:linking_filter:condition_1:get_peers_1:action_result.data.*.id", "filtered-data:linking_filter:condition_1:get_peers_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'tag_device_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'ip': filtered_results_item_1[0],
-                'tag': "bad_ip_reputation",
-                'eh_api_id': filtered_results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[2]},
-            })
+    parameters = [
+        {
+            'ip': filtered_results_item_1[0],
+            'tag': "bad_ip_reputation",
+            'eh_api_id': filtered_results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[2]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="tag device", parameters=parameters, assets=['extrahop'], name="tag_device_1")
 
@@ -239,23 +236,23 @@ Look up the IP reputation of all external peers acting as a client in the last 3
 """
 def ip_reputation_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ip_reputation_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ip_reputation_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:internal_ip_filter:condition_1:get_peers_1:action_result.data.*.ipaddr4", "filtered-data:internal_ip_filter:condition_1:get_peers_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'ip': filtered_results_item_1[0],
-                'limit': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_results_item_1[0],
+            'limit': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['threatstream'], callback=threat_score_thresholds, name="ip_reputation_1")
 

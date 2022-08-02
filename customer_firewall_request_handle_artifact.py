@@ -110,17 +110,17 @@ def unblock_src_ip(action=None, success=None, container=None, results=None, hand
     # collect data for 'unblock_src_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.sourceAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'unblock_src_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        parameters.append({
+    parameters = [
+        {
             'ip': filtered_artifacts_item_1[0],
             'vsys': "",
             'is_source_address': True,
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': filtered_artifacts_item_1[1]},
-        })
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+    ]
+
 
     phantom.act(action="unblock ip", parameters=parameters, assets=['pan'], name="unblock_src_ip")
 
@@ -135,18 +135,18 @@ def block_dst_ip(action=None, success=None, container=None, results=None, handle
     # collect data for 'block_dst_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_2:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_dst_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'vsys': "",
-                'is_source_address': False,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'vsys': "",
+            'is_source_address': False,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], name="block_dst_ip")
 
@@ -161,17 +161,17 @@ def unblock_dst_ip(action=None, success=None, container=None, results=None, hand
     # collect data for 'unblock_dst_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'unblock_dst_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        parameters.append({
+    parameters = [
+        {
             'ip': filtered_artifacts_item_1[0],
             'vsys': "",
             'is_source_address': False,
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': filtered_artifacts_item_1[1]},
-        })
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+    ]
+
 
     phantom.act(action="unblock ip", parameters=parameters, assets=['pan'], name="unblock_dst_ip")
 
@@ -186,18 +186,18 @@ def block_src_ip(action=None, success=None, container=None, results=None, handle
     # collect data for 'block_src_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.sourceAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_src_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'vsys': "",
-                'is_source_address': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'vsys': "",
+            'is_source_address': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], name="block_src_ip")
 

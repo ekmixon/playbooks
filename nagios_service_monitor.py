@@ -46,14 +46,14 @@ def execute_program_1(action=None, success=None, container=None, results=None, h
     formatted_data_1 = phantom.get_format_data(name='parse_hostname_or_ip')
     formatted_data_2 = phantom.get_format_data(name='format_service_command')
 
-    parameters = []
-    
-    # build parameters list for 'execute_program_1' call
-    parameters.append({
-        'ip_hostname': formatted_data_1,
-        'command': formatted_data_2,
-        'timeout': "",
-    })
+    parameters = [
+        {
+            'ip_hostname': formatted_data_1,
+            'command': formatted_data_2,
+            'timeout': "",
+        }
+    ]
+
 
     if parameters[0]["ip_hostname"] == "hostname allowlist check failed":
         return
@@ -61,7 +61,7 @@ def execute_program_1(action=None, success=None, container=None, results=None, h
         return
 
     phantom.act("execute program", parameters=parameters, assets=['ssh'], name="execute_program_1")    
-    
+
     return
 
 def join_execute_program_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None):
@@ -112,17 +112,17 @@ Parse the service name reported by Nagios and check it against an allowlist (a C
 """
 def format_service_command(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_service_command() called')
-    
+
     container_data = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.emailHeaders.Subject'])
-    
+
     service = ""
     for result in container_data:
         if result[0] and "Service Alert" in result[0]:
             parts = result[0].split("** PROBLEM Service Alert: ")
             service = parts[1].split('/')[1].split(" process is CRITICAL")[0]
 
-    ssh_command = "service {} restart".format(service)
-    
+    ssh_command = f"service {service} restart"
+
     success, message, allowlist = phantom.get_list("nagios_service_monitoring_service_name_allowlist")
     if [service] in allowlist:
         phantom.debug("service name allowlist check passed")

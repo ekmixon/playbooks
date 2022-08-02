@@ -18,13 +18,13 @@ def regex_extract_email(input_string=None, **kwargs):
     import re
     import json
     import phantom.rules as phantom
-    
+
     outputs = []
 
     email_regex = r'[a-z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}'
 
     for email in re.findall(email_regex, input_string, re.IGNORECASE):
-        phantom.debug('found email address: {}'.format(email))
+        phantom.debug(f'found email address: {email}')
         outputs.append({
             'email_address': email,
             'domain': email.split('@')[-1]}

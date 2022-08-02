@@ -19,16 +19,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['greynoise'], callback=decision_1, name="ip_reputation_1")
 
@@ -37,29 +37,23 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["ip_reputation_1:action_result.parameter.ip", "==", "malicious"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         set_severity_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
-    # check for 'elif' condition 2
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["ip_reputation_1:action_result.parameter.ip", "==", "unknown"],
-        ])
-
-    # call connected blocks if condition 2 matched
-    if matched:
+        ],
+    ):
         set_severity_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 

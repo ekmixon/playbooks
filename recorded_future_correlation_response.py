@@ -22,12 +22,7 @@ def ip_intelligence_1(action=None, success=None, container=None, results=None, h
     deduplicate_inputs__ip = json.loads(phantom.get_run_data(key='deduplicate_inputs:ip'))
     # collect data for 'ip_intelligence_1' call
 
-    parameters = []
-    
-    # build parameters list for 'ip_intelligence_1' call
-    parameters.append({
-        'ip': deduplicate_inputs__ip,
-    })
+    parameters = [{'ip': deduplicate_inputs__ip}]
 
     phantom.act(action="ip intelligence", parameters=parameters, assets=['recorded_future'], callback=join_format_prompt_question, name="ip_intelligence_1")
 
@@ -42,12 +37,7 @@ def domain_intelligence_1(action=None, success=None, container=None, results=Non
     deduplicate_inputs__domain = json.loads(phantom.get_run_data(key='deduplicate_inputs:domain'))
     # collect data for 'domain_intelligence_1' call
 
-    parameters = []
-    
-    # build parameters list for 'domain_intelligence_1' call
-    parameters.append({
-        'domain': deduplicate_inputs__domain,
-    })
+    parameters = [{'domain': deduplicate_inputs__domain}]
 
     phantom.act(action="domain intelligence", parameters=parameters, assets=['recorded_future'], callback=join_format_prompt_question, name="domain_intelligence_1")
 
@@ -58,18 +48,19 @@ Only continue the playbook if this event was created by the appropriate Splunk c
 """
 def rule_name_decision(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('rule_name_decision() called')
-    
+
     name_param = container.get('name', None)
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
-            [name_param, "==", "Threat - Cisco WSA L4TM Correlation Against Recorded Future IP Threat List - Rule"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                name_param,
+                "==",
+                "Threat - Cisco WSA L4TM Correlation Against Recorded Future IP Threat List - Rule",
+            ],
+        ],
+    ):
         deduplicate_inputs(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -80,7 +71,7 @@ Each matching Recorded Future threat rule will create a nearly identical artifac
 """
 def deduplicate_inputs(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('deduplicate_inputs() called')
-    
+
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.cef.dest_domain', 'artifact:*.id'])
     container_item_0 = [item[0] for item in container_data]
     container_item_1 = [item[1] for item in container_data]
@@ -94,7 +85,7 @@ def deduplicate_inputs(action=None, success=None, container=None, results=None, 
 
     deduplicate_inputs__ip = container_item_0[0]
     deduplicate_inputs__domain = container_item_1[0]
-    
+
     if not deduplicate_inputs__ip or not deduplicate_inputs__domain:
         failure_message = "stopping the playbook because either the IP address or domain name was missing from the event"
         phantom.comment(container=container, comment=failure_message)
@@ -117,7 +108,7 @@ Use the source data and the threat context to build the prompt text asking the a
 """
 def format_prompt_question(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_prompt_question() called')
-    
+
     template = """A Splunk correlation search ({0}) detected an internal system opening a network connection to a potentially malicious IP address based on traffic monitoring from Cisco WSA and threat intelligence from Recorded Future:
 
 IP address: {1}
@@ -159,7 +150,7 @@ Send the prompt to block the playbook until a response is received
 """
 def block_recorded_future_ip_and_domain(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_recorded_future_ip_and_domain() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """{0}"""
@@ -193,16 +184,17 @@ Determine the next action based on the analyst's response
 def decide_prompt_response(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decide_prompt_response() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["block_recorded_future_ip_and_domain:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "block_recorded_future_ip_and_domain:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         block_ip_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         block_domain_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
@@ -227,18 +219,13 @@ Block all of the IP addresses in the deduplicated list by adjusting the firewall
 """
 def block_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     deduplicate_inputs__ip = json.loads(phantom.get_run_data(key='deduplicate_inputs:ip'))
     # collect data for 'block_ip_1' call
 
-    parameters = []
-    
-    # build parameters list for 'block_ip_1' call
-    parameters.append({
-        'ip': deduplicate_inputs__ip,
-    })
+    parameters = [{'ip': deduplicate_inputs__ip}]
 
     phantom.act(action="block ip", parameters=parameters, assets=['cisco_firepower'], name="block_ip_1")
 
@@ -249,19 +236,16 @@ Block all of the domain names in the deduplicated list using a DNS sinkhole
 """
 def block_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_domain_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     deduplicate_inputs__domain = json.loads(phantom.get_run_data(key='deduplicate_inputs:domain'))
     # collect data for 'block_domain_1' call
 
-    parameters = []
-    
-    # build parameters list for 'block_domain_1' call
-    parameters.append({
-        'domain': deduplicate_inputs__domain,
-        'disable_safeguards': False,
-    })
+    parameters = [
+        {'domain': deduplicate_inputs__domain, 'disable_safeguards': False}
+    ]
+
 
     phantom.act(action="block domain", parameters=parameters, assets=['opendns_umbrella'], name="block_domain_1")
 

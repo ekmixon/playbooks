@@ -26,7 +26,7 @@ Custom code block that generates a strong random password
 """
 def generate_password(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('generate_password() called')
-    
+
     input_parameter_0 = ""
 
     generate_password__strong_password = None
@@ -38,9 +38,9 @@ def generate_password(action=None, success=None, container=None, results=None, h
     alpha = 'abcdefghijklmnopqrstuvwxyz'
     num = '0123456789'
     special = '!@#$%^&*('
-    
+
     pwd = ''
-    for i in range(5):
+    for _ in range(5):
         pwd += alpha[randint(0, len(alpha)-1)]
         pwd += (alpha[randint(0, len(alpha)-1)]).upper()
         pwd += num[randint(0, len(num)-1)]
@@ -61,7 +61,7 @@ def generate_password(action=None, success=None, container=None, results=None, h
 
 def reset_password(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_password() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Found the account \"{0}\" has a compromised credential! Would you like to automatically reset the password?"""
@@ -92,16 +92,13 @@ def reset_password(action=None, success=None, container=None, results=None, hand
 def reset_option(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_option() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["reset_password:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         generate_password(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -115,24 +112,24 @@ Reset the Active Directory password of the user to the generated password
 """
 def reset_ad_password(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reset_ad_password() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     generate_password__strong_password = json.loads(phantom.get_run_data(key='generate_password:strong_password'))
     # collect data for 'reset_ad_password' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.compromisedUserName', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'reset_ad_password' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'username': container_item[0],
-                'new_password': generate_password__strong_password,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'username': container_item[0],
+            'new_password': generate_password__strong_password,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="set password", parameters=parameters, assets=['active directory'], name="reset_ad_password")
 
@@ -152,7 +149,7 @@ Formats a message about the password reset to provide in the comments
 """
 def format_pwd_message(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_pwd_message() called')
-    
+
     template = """Reset user {0} password to {1}"""
 
     # parameter list for template variable replacement
@@ -172,7 +169,7 @@ Formats a message stating the user declined to reset the password
 """
 def format_decline_msg(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_decline_msg() called')
-    
+
     template = """Analyst declined to reset password for user: {0}"""
 
     # parameter list for template variable replacement
