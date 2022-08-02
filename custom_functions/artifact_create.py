@@ -20,9 +20,7 @@ def artifact_create(container=None, name=None, label=None, severity=None, cef_fi
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
-    new_artifact = {}
-    
+
     if isinstance(container, int):
         container_id = container
     elif isinstance(container, dict):
@@ -30,18 +28,11 @@ def artifact_create(container=None, name=None, label=None, severity=None, cef_fi
     else:
         raise TypeError("container is neither an int nor a dictionary")
 
-    if name:
-        new_artifact['name'] = name
-    else:
-        new_artifact['name'] = 'artifact'
-    if label:
-        new_artifact['label'] = label
-    else:
-        new_artifact['label'] = 'events'
-    if severity:
-        new_artifact['severity'] = severity
-    else:
-        new_artifact['severity'] = 'Medium'
+    new_artifact = {
+        'name': name or 'artifact',
+        'label': label or 'events',
+        'severity': severity or 'Medium',
+    }
 
     # validate that if cef_field or cef_value is provided, the other is also provided
     if (cef_field and not cef_value) or (cef_value and not cef_field):
@@ -65,18 +56,24 @@ def artifact_create(container=None, name=None, label=None, severity=None, cef_fi
             raise ValueError("run_automation must be either 'true' or 'false'")
     else:
         new_artifact['run_automation'] = False
-    
+
     if input_json:
         json_dict = json.loads(input_json)
         # Merge dictionaries, using the value from json_dict if there are any conflicting keys
         for json_key in json_dict:
             new_artifact[json_key] = json_dict[json_key]
-    
+
     # now actually create the artifact
-    phantom.debug('creating a new artifact with the following attributes:\n{}'.format(new_artifact))
+    phantom.debug(
+        f'creating a new artifact with the following attributes:\n{new_artifact}'
+    )
+
     success, message, artifact_id = phantom.add_artifact(**new_artifact)
 
-    phantom.debug('add_artifact() returned the following:\nsuccess: {}\nmessage: {}\nartifact_id: {}'.format(success, message, artifact_id))
+    phantom.debug(
+        f'add_artifact() returned the following:\nsuccess: {success}\nmessage: {message}\nartifact_id: {artifact_id}'
+    )
+
     if not success:
         raise RuntimeError("add_artifact() failed")
 
@@ -85,7 +82,7 @@ def artifact_create(container=None, name=None, label=None, severity=None, cef_fi
         tags = tags.replace(" ", "").split(",")
         url = phantom.build_phantom_rest_url('artifact', artifact_id)
         response = phantom.requests.post(uri=url, json={'tags': tags}, verify=False).json()
-        phantom.debug('response from POST request to add tags:\n{}'.format(response))
-        
+        phantom.debug(f'response from POST request to add tags:\n{response}')
+
     # Return the id of the created artifact
     return {'artifact_id': artifact_id}

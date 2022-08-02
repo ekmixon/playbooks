@@ -49,7 +49,7 @@ def customer_firewall_request_parse_csv(action=None, success=None, container=Non
 
     # filter info returned to find the path where the file is stored in the vault
     file_path = vault_info[2][0]["path"]
-    phantom.debug('vault file path: {}'.format(file_path))
+    phantom.debug(f'vault file path: {file_path}')
 
     # read the .csv file, file and add artifacts with the label "customer_request" to container
     raw_data = {}
@@ -60,7 +60,7 @@ def customer_firewall_request_parse_csv(action=None, success=None, container=Non
             for cef_data in reader:
                 cef_data_keys = list(cef_data.keys())
                 if 'action' in cef_data_keys and ('sourceAddress' in cef_data_keys or 'destinationAddress' in cef_data_keys):
-                    phantom.debug('adding artifact: {}'.format(cef_data))
+                    phantom.debug(f'adding artifact: {cef_data}')
                     success, message, artifact_id = phantom.add_artifact(container=container,
                                                                          raw_data=raw_data,
                                                                          cef_data=cef_data,
@@ -70,9 +70,9 @@ def customer_firewall_request_parse_csv(action=None, success=None, container=Non
                                                                          identifier=None,
                                                                          artifact_type='network')
                     if not success:
-                        phantom.error("Adding Artifact failed: {}".format(message))
+                        phantom.error(f"Adding Artifact failed: {message}")
     except Exception as e:
-        phantom.error("Exception Occurred: {}".format(e.args[1]))
+        phantom.error(f"Exception Occurred: {e.args[1]}")
         return
     # ----- end of added code -----
 

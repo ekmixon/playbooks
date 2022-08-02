@@ -19,17 +19,17 @@ def add_endpoint_to_list(action=None, success=None, container=None, results=None
     # collect data for 'add_endpoint_to_list' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_2:artifact:*.cef.sourceAddress', 'filtered-data:filter_2:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'add_endpoint_to_list' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        parameters.append({
+    parameters = [
+        {
             'list': "infected_endpoints",
             'new_row': filtered_artifacts_item_1[0],
             'create': "",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': filtered_artifacts_item_1[1]},
-        })
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+    ]
+
 
     phantom.act(action="add listitem", parameters=parameters, assets=['phantom'], callback=format_new_infection, name="add_endpoint_to_list")
 
@@ -38,15 +38,12 @@ def add_endpoint_to_list(action=None, success=None, container=None, results=None
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.sourceAddress", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         filter_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -61,16 +58,16 @@ def create_ticket_reinfected(action=None, success=None, container=None, results=
     # collect data for 'create_ticket_reinfected' call
     formatted_data_1 = phantom.get_format_data(name='format_reinfected')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_reinfected' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Reinfected Endpoint Instance",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Reinfected Endpoint Instance",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_close_container, name="create_ticket_reinfected")
 
@@ -78,22 +75,22 @@ def create_ticket_reinfected(action=None, success=None, container=None, results=
 
 def create_ticket_new_infection(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_new_infection() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_new_infection' call
     formatted_data_1 = phantom.get_format_data(name='format_new_infection')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_new_infection' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "New Infected Endpoints",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "New Infected Endpoints",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], callback=join_close_container, name="create_ticket_new_infection")
 
@@ -151,7 +148,7 @@ Aggregate the action results for the purposes of filing a ticket.
 """
 def format_new_infection(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_new_infection() called')
-    
+
     template = """The following infected endpoints are new infection instances and have been added to the infected_endpoints custom list:
 {0}"""
 
@@ -171,7 +168,7 @@ Aggregate the action results for the purposes of filing a ticket.
 """
 def format_reinfected(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_reinfected() called')
-    
+
     template = """The following infected endpoints are repeat offenders who have matched on the infected_endpoints custom list:
 {0}"""
 

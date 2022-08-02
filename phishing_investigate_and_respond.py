@@ -13,26 +13,25 @@ This playbook is deigned to perform the investigative steps necessary to investi
 """
 
 def test_params(container, datapath, key_name):
-    params = []
     items = set(phantom.collect(container, datapath, scope='all'))
-    for item in items:
-        params.append({key_name:item}) 
-    return params
+    return [{key_name:item} for item in items]
 
 # End - Global Code block
 ##############################
 
 def on_start(container):
     urls = test_params(container, 'artifact:*.cef.requestURL', 'url')
-    domains = test_params(container,'artifact:*.cef.destinationDnsDomain', 'domain') 
-    ips = test_params(container, 'artifact:*.cef.destinationAddress', 'ip') 
+    domains = test_params(container,'artifact:*.cef.destinationDnsDomain', 'domain')
+    ips = test_params(container, 'artifact:*.cef.destinationAddress', 'ip')
     file_hashs = test_params(container, 'artifact:*.cef.cs6', 'hash')
     #if no file hashes this way, lets see if there is a vault item that has been added manually)
     if not file_hashs:
         success, message, vault_items = phantom.vault_info(container_id=container['id'])
-        hashes = []
-        for vault_item in vault_items:            
-            hashes.append({'hash': vault_item['metadata']['sha256']})
+        hashes = [
+            {'hash': vault_item['metadata']['sha256']}
+            for vault_item in vault_items
+        ]
+
     if file_hashs:
     # call 'file_reputation_1' block
         file_reputation_1(container=container)
@@ -63,16 +62,16 @@ def geolocate_ip_1(action=None, success=None, container=None, results=None, hand
     # collect data for 'geolocate_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=filter_10, name="geolocate_ip_1")
 
@@ -133,49 +132,46 @@ def filter_13(action=None, success=None, container=None, results=None, handle=No
     return
 
 def detonate_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'detonate_file_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.deviceCustomString6', 'artifact:*.id'])
     success, message, vault_items = phantom.vault_info(container_id=container['id'])
 
-    parameters = []
-    
-    # build parameters list for 'detonate_file_1' call
-    for vault_item in vault_items:
-        if vault_item['vault_id']:
-            parameters.append({
-                'file_name': "",
-                'vault_id': vault_item['vault_id'],
-            })
-
-    if parameters:
-        phantom.act("detonate file", parameters=parameters, assets=['wildfire'], callback=filter_3, name="detonate_file_1")    
+    if parameters := [
+        {
+            'file_name': "",
+            'vault_id': vault_item['vault_id'],
+        }
+        for vault_item in vault_items
+        if vault_item['vault_id']
+    ]:
+        phantom.act("detonate file", parameters=parameters, assets=['wildfire'], callback=filter_3, name="detonate_file_1")
     else:
         phantom.error("'detonate_file_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def get_sysinfo(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_sysinfo() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_sysinfo' call
     results_data_1 = phantom.collect2(container=container, datapath=['hunt_file_1:action_result.data.*.process.results.*.hostname', 'hunt_file_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_sysinfo' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'fields': "",
-                'hostname': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'fields': "",
+            'hostname': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get system attributes", parameters=parameters, assets=['domainctrl1'], callback=join_prompt_1, name="get_sysinfo")
 
@@ -241,16 +237,16 @@ def file_reputation_1(action=None, success=None, container=None, results=None, h
     # collect data for 'file_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.cs6', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'hash': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'hash': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="file reputation", parameters=parameters, assets=['virustotal'], callback=filter_1, name="file_reputation_1")
 
@@ -262,16 +258,16 @@ def url_reputation_1(action=None, success=None, container=None, results=None, ha
     # collect data for 'url_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.requestURL', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'url_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'url': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'url': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="url reputation", parameters=parameters, assets=['virustotal'], callback=filter_4, name="url_reputation_1")
 
@@ -283,16 +279,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], callback=filter_8, name="ip_reputation_1")
 
@@ -300,23 +296,23 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
 
 def detonate_url_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('detonate_url_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'detonate_url_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['url_reputation_1:action_result.data.*.resource', 'url_reputation_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'detonate_url_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'url': results_item_1[0],
-                'playbook': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': results_item_1[0],
+            'playbook': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="detonate url", parameters=parameters, assets=['threatgrid'], callback=filter_6, name="detonate_url_1")
 
@@ -342,22 +338,22 @@ def filter_6(action=None, success=None, container=None, results=None, handle=Non
 
 def attribution(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('attribution() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'attribution' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_6:condition_1:detonate_url_1:action_result.parameter.url", "filtered-data:filter_6:condition_1:detonate_url_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'attribution' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'url': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="hunt url", parameters=parameters, assets=['isightpartners'], callback=join_get_screenshot_1, name="attribution")
 
@@ -396,23 +392,23 @@ def filter_4(action=None, success=None, container=None, results=None, handle=Non
 
 def get_screenshot_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_screenshot_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_screenshot_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_4:condition_1:url_reputation_1:action_result.parameter.url", "filtered-data:filter_4:condition_1:url_reputation_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'get_screenshot_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'url': filtered_results_item_1[0],
-                'size': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'url': filtered_results_item_1[0],
+            'size': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="get screenshot", parameters=parameters, assets=['screenshot machine'], callback=join_prompt_1, name="get_screenshot_1")
 
@@ -483,22 +479,22 @@ def filter_1(action=None, success=None, container=None, results=None, handle=Non
 
 def hunt_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('hunt_file_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'hunt_file_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["file_reputation_1:filtered-action_result.data.*.sha256", "file_reputation_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'hunt_file_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'hash': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="hunt file", parameters=parameters, assets=['cbprotect'], callback=filter_2, name="hunt_file_1")
 
@@ -521,16 +517,13 @@ def join_hunt_file_1(action=None, success=None, container=None, results=None, ha
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", "YES"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         delete_email_2(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -538,7 +531,7 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Administrator"
     message = """An email is being marked as a Phish attempt. Please inspect and approve so that Phantom can delete all instances of the phish from your mail server.  If you do not respond within 6 hours (360 Minutes) the email will _NOT_ be deleted. If you respond \"Yes\" Phantom will start the removal of the phish from all mailboxes on your mail server. All enrichment data is in MIssion Control for your review."""
@@ -621,16 +614,16 @@ def whois_domain(action=None, success=None, container=None, results=None, handle
     # collect data for 'whois_domain' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationDnsDomain', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'whois_domain' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'domain': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'domain': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="whois domain", parameters=parameters, assets=['whois'], name="whois_domain")
 
@@ -642,16 +635,16 @@ def whois_ip(action=None, success=None, container=None, results=None, handle=Non
     # collect data for 'whois_ip' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['domaintools'], name="whois_ip")
 
@@ -659,26 +652,26 @@ def whois_ip(action=None, success=None, container=None, results=None, handle=Non
 
 def delete_email_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('delete_email_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     name_value = container.get('name', None)
 
     # collect data for 'delete_email_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceUserName', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'delete_email_2' call
-    for container_item in container_data:
-        parameters.append({
+    parameters = [
+        {
             'from': container_item[0],
             'user': "",
             'subject': name_value,
             'ip_hostname': "exchange_server",
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': container_item[1]},
-        })
+        }
+        for container_item in container_data
+    ]
+
 
     phantom.act(action="delete email", parameters=parameters, assets=['domainctrl1'], name="delete_email_2")
 
@@ -690,16 +683,16 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
     # collect data for 'domain_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationDnsDomain', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'domain': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'domain': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['opendns_investigate'], callback=filter_5, name="domain_reputation_1")
 
@@ -707,22 +700,22 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
 
 def domain_reputation_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('domain_reputation_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'domain_reputation_2' call
     results_data_1 = phantom.collect2(container=container, datapath=['lookup_ip_1:action_result.summary.hostname', 'lookup_ip_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'domain_reputation_2' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'domain': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['opendns_investigate'], callback=filter_11, name="domain_reputation_2", parent_action=action)
 
@@ -730,22 +723,22 @@ def domain_reputation_2(action=None, success=None, container=None, results=None,
 
 def lookup_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('lookup_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'lookup_ip_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["ip_reputation_1:filtered-action_result.parameter.ip", "ip_reputation_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'lookup_ip_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'ip': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="lookup ip", parameters=parameters, assets=['dns'], callback=domain_reputation_2, name="lookup_ip_1")
 

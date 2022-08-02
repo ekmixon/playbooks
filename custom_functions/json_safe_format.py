@@ -11,13 +11,10 @@ def json_safe_format(json_input=None, **kwargs):
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
-    outputs = {}
-    
+
     safe_json = json.dumps(json.loads(json_input, strict=False))
-        
-    outputs['json_output'] = safe_json
-    
+
+    outputs = {'json_output': safe_json}
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable
     return outputs

@@ -46,7 +46,7 @@ Summarize the action results for the DNS, geolocation, and WHOIS lookups. The fo
 """
 def summarize_results(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('summarize_results() called')
-    
+
     template = ""
     # collect the status of every DNS, geolocate, and WHOIS query
     dns_datapaths = [
@@ -61,8 +61,9 @@ def summarize_results(action=None, success=None, container=None, results=None, h
             attempts += 1
             if action[0] == "success":
                 successes += 1
-    template += "{} out of {} attempted DNS queries were successful\n".format(successes, attempts)
-            
+    template += f"{successes} out of {attempts} attempted DNS queries were successful\n"
+
+
     geolocate_datapaths = [
         "geolocate_ip_dst:action_result.status",
         "geolocate_ip_src:action_result.status",
@@ -79,8 +80,9 @@ def summarize_results(action=None, success=None, container=None, results=None, h
             attempts += 1
             if action[0] == "success":
                 successes += 1
-    template += "{} out of {} attempted geolocations were successful\n".format(successes, attempts)
-    
+    template += f"{successes} out of {attempts} attempted geolocations were successful\n"
+
+
     whois_datapaths = [
         "whois_ip_dst:action_result.status",
         "whois_ip_src:action_result.status",
@@ -97,8 +99,9 @@ def summarize_results(action=None, success=None, container=None, results=None, h
             attempts += 1
             if action[0] == "success":
                 successes += 1
-    template += "{} out of {} attempted WHOIS queries were successful\n".format(successes, attempts)
-        
+    template += f"{successes} out of {attempts} attempted WHOIS queries were successful\n"
+
+
     phantom.format(container=container, template=template, parameters=[], name="summarize_results")
 
     check_internal_addresses(container=container)
@@ -230,17 +233,17 @@ def lookup_source_domain(action=None, success=None, container=None, results=None
     # collect data for 'lookup_source_domain' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_3:artifact:*.cef.sourceDnsDomain', 'filtered-data:filter_2:condition_3:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_source_domain' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'type': "",
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'type': "",
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="lookup domain", parameters=parameters, assets=['dns'], callback=geolocate_source, name="lookup_source_domain")
 
@@ -255,17 +258,17 @@ def lookup_dest_domain(action=None, success=None, container=None, results=None, 
     # collect data for 'lookup_dest_domain' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationDnsDomain', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_dest_domain' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'type': "",
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'type': "",
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="lookup domain", parameters=parameters, assets=['dns'], callback=geolocate_dest, name="lookup_dest_domain")
 
@@ -275,26 +278,26 @@ def lookup_dest_domain(action=None, success=None, container=None, results=None, 
 Extract the domain part of the URL and use DNS to resolve it to an IP address.
 """
 def lookup_ip_for_url(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
-    
+
     phantom.debug('lookup_url() called')
 
     # collect data for 'lookup_url' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_2:artifact:*.cef.requestURL', 'filtered-data:filter_2:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_url' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'domain': extract_domain_from_url(filtered_artifacts_item_1[0]),
-                'type': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': extract_domain_from_url(filtered_artifacts_item_1[0]),
+            'type': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act("lookup domain", parameters=parameters, assets=['dns'], callback=geolocate_url, name="lookup_ip_for_url")
-    
+
     return
 
 """
@@ -306,16 +309,16 @@ def geolocate_ip_src(action=None, success=None, container=None, results=None, ha
     # collect data for 'geolocate_ip_src' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.src', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_src' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_ip_src, name="geolocate_ip_src")
 
@@ -330,16 +333,16 @@ def geolocate_sourceAddress(action=None, success=None, container=None, results=N
     # collect data for 'geolocate_sourceAddress' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_sourceAddress' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_sourceAddress, name="geolocate_sourceAddress")
 
@@ -350,22 +353,22 @@ WHOIS lookup on the IP address in cef.src
 """
 def whois_ip_src(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_ip_src() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_ip_src' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_ip_src:action_result.parameter.ip', 'geolocate_ip_src:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_src' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_ip_src", parent_action=action)
 
@@ -376,22 +379,22 @@ WHOIS lookup on the IP address in cef.destinationAddress
 """
 def whois_destAddress(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_destAddress() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_destAddress' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_destAddress:action_result.parameter.ip', 'geolocate_destAddress:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_destAddress' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_destAddress", parent_action=action)
 
@@ -406,16 +409,16 @@ def geolocate_destAddress(action=None, success=None, container=None, results=Non
     # collect data for 'geolocate_destAddress' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_destAddress' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_destAddress, name="geolocate_destAddress")
 
@@ -426,22 +429,22 @@ Geolocate the resolved IP address using Maxmind
 """
 def geolocate_source(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('geolocate_source() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'geolocate_source' call
     results_data_1 = phantom.collect2(container=container, datapath=['lookup_source_domain:action_result.summary.record_info', 'lookup_source_domain:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_source' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_source_ip, name="geolocate_source", parent_action=action)
 
@@ -452,22 +455,22 @@ Geolocate the resolved IP address using Maxmind
 """
 def geolocate_dest(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('geolocate_dest() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'geolocate_dest' call
     results_data_1 = phantom.collect2(container=container, datapath=['lookup_dest_domain:action_result.summary.record_info', 'lookup_dest_domain:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_dest' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_dest_ip, name="geolocate_dest", parent_action=action)
 
@@ -478,22 +481,22 @@ Geolocate the resolved IP address using Maxmind
 """
 def geolocate_url(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('geolocate_url() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'geolocate_url' call
     results_data_1 = phantom.collect2(container=container, datapath=['lookup_ip_for_url:action_result.summary.record_info', 'lookup_ip_for_url:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_url' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_url_ip, name="geolocate_url", parent_action=action)
 
@@ -504,22 +507,22 @@ WHOIS lookup on the IP address in cef.sourceAddress
 """
 def whois_sourceAddress(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_sourceAddress() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_sourceAddress' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_sourceAddress:action_result.parameter.ip', 'geolocate_sourceAddress:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_sourceAddress' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_sourceAddress", parent_action=action)
 
@@ -530,22 +533,22 @@ WHOIS lookup on the resolved IP address
 """
 def whois_source_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_source_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_source_ip' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_source:action_result.parameter.ip', 'geolocate_source:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_source_ip' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_source_ip", parent_action=action)
 
@@ -556,22 +559,22 @@ WHOIS lookup on the resolved IP address
 """
 def whois_dest_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_dest_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_dest_ip' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_dest:action_result.parameter.ip', 'geolocate_dest:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_dest_ip' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_dest_ip", parent_action=action)
 
@@ -582,22 +585,22 @@ WHOIS lookup on the resolved IP address
 """
 def whois_url_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_url_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_url_ip' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_url:action_result.parameter.ip', 'geolocate_url:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_url_ip' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_url_ip", parent_action=action)
 
@@ -612,16 +615,16 @@ def geolocate_ip_dst(action=None, success=None, container=None, results=None, ha
     # collect data for 'geolocate_ip_dst' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.dst', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_dst' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_ip_dst, name="geolocate_ip_dst")
 
@@ -632,22 +635,22 @@ WHOIS lookup on the IP address in cef.dst
 """
 def whois_ip_dst(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_ip_dst() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_ip_dst' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_ip_dst:action_result.parameter.ip', 'geolocate_ip_dst:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_dst' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=join_summarize_results, name="whois_ip_dst", parent_action=action)
 
@@ -658,7 +661,7 @@ Check all identified IP addresses against the Custom List called "internal netwo
 """
 def check_internal_addresses(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('check_internal_addresses() called')
-    
+
     datapaths = [
         "geolocate_ip_dst:action_result.parameter.ip",
         "geolocate_ip_src:action_result.parameter.ip",
@@ -685,7 +688,10 @@ def check_internal_addresses(action=None, success=None, container=None, results=
             for ip_address in set(ip_addresses):
                 if phantom.address_in_network(ip_address, str(row[0])):
                     internal_ip_addresses.append(ip_address)
-                    check_internal_template += "{} is in internal network range {}\n".format(ip_address, row[0])
+                    check_internal_template += (
+                        f"{ip_address} is in internal network range {row[0]}\n"
+                    )
+
         for idx, external_address in enumerate(set(ip_addresses) - set(internal_ip_addresses)):
             if idx == 0:
                 check_internal_template += "\nThe following IP addresses were not found in internal network ranges:\n"

@@ -21,16 +21,16 @@ def scan_port_5900(action=None, success=None, container=None, results=None, hand
 
     # collect data for 'scan_port_5900' call
 
-    parameters = []
-    
-    # build parameters list for 'scan_port_5900' call
-    parameters.append({
-        'script': "",
-        'portlist': 5900,
-        'udp_scan': "",
-        'ip_hostname': "198.51.100.*",
-        'script-args': "",
-    })
+    parameters = [
+        {
+            'script': "",
+            'portlist': 5900,
+            'udp_scan': "",
+            'ip_hostname': "198.51.100.*",
+            'script-args': "",
+        }
+    ]
+
 
     phantom.act(action="scan network", parameters=parameters, assets=['nmap'], callback=filter_1, name="scan_port_5900")
 

@@ -28,7 +28,7 @@ Formats the alert data to a nice format for adding a note
 """
 def format_victims_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_victims_list() called')
-    
+
     template = """Recorded Future is alerting on probable leaked credentials. This contains the complete list.
 <p>
 Alert: 
@@ -63,23 +63,23 @@ Query for alerts from the last 24 hours using the returned alert rule ID
 """
 def rf_get_rule_data(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('rf_get_rule_data() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'rf_get_rule_data' call
     results_data_1 = phantom.collect2(container=container, datapath=['rf_get_rule_id_by_name:action_result.data.*.rule.id', 'rf_get_rule_id_by_name:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'rf_get_rule_data' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'rule_id': results_item_1[0],
-                'timeframe': "-24h to now",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'rule_id': results_item_1[0],
+            'timeframe': "-24h to now",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="alert data lookup", parameters=parameters, assets=['recorded_future'], callback=dedup_accounts, name="rf_get_rule_data", parent_action=action)
 
@@ -93,12 +93,7 @@ def rf_get_rule_id_by_name(action=None, success=None, container=None, results=No
 
     # collect data for 'rf_get_rule_id_by_name' call
 
-    parameters = []
-    
-    # build parameters list for 'rf_get_rule_id_by_name' call
-    parameters.append({
-        'rule_name': "Leaked Credential Monitoring",
-    })
+    parameters = [{'rule_name': "Leaked Credential Monitoring"}]
 
     phantom.act(action="alert rule lookup", parameters=parameters, assets=['recorded_future'], callback=rf_get_rule_data, name="rf_get_rule_id_by_name")
 
@@ -109,21 +104,21 @@ Finds directory users with matching mail attributes
 """
 def get_affected_ad_users(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_affected_ad_users() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_affected_ad_users' call
     formatted_data_1 = phantom.get_format_data(name='convert_to_list__as_list')
 
-    parameters = []
-    
-    # build parameters list for 'get_affected_ad_users' call
-    for formatted_part_1 in formatted_data_1:
-        parameters.append({
+    parameters = [
+        {
             'fields': "sAMAccountName,pwdLastSet,userAccountControl,mail",
             'username': formatted_part_1,
             'attribute': "mail",
-        })
+        }
+        for formatted_part_1 in formatted_data_1
+    ]
+
 
     phantom.act(action="get user attributes", parameters=parameters, app={ "name": 'LDAP' }, callback=get_active_ad_users, name="get_affected_ad_users")
 
@@ -158,7 +153,7 @@ Deduplicates any accounts in the list provided by Recorded Future
 """
 def dedup_accounts(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('dedup_accounts() called')
-    
+
     results_data_1 = phantom.collect2(container=container, datapath=['rf_get_rule_data:action_result.data.*.alerts.*.alert.content.entities.*.documents.*.references.*.entities.*.name', 'rf_get_rule_data:action_result.data.*.alerts.*.alert.content.entities.*.documents.*.references.*.entities.*.type'], action_results=results)
     results_item_1_0 = [item[0] for item in results_data_1]
     results_item_1_1 = [item[1] for item in results_data_1]
@@ -172,12 +167,15 @@ def dedup_accounts(action=None, success=None, container=None, results=None, hand
     # NOTE: Dedups the entities of type EmailAddress for downstream usage.
     dedup_accounts__dedup_email = []
     if len(results_item_1_0) == len(results_item_1_1):
-        for i in range(len(results_item_1_0)):
-            if results_item_1_1[i] == "EmailAddress":
-                dedup_accounts__dedup_email.append(results_item_1_0[i])
+        dedup_accounts__dedup_email.extend(
+            results_item_1_0[i]
+            for i in range(len(results_item_1_0))
+            if results_item_1_1[i] == "EmailAddress"
+        )
+
     else:
         phantom.debug("[DEBUG] Inconsistent Lengths.")
-    
+
     dedup_accounts__dedup_email = list(set(dedup_accounts__dedup_email))
 
     ################################################################################
@@ -195,7 +193,7 @@ Converts the custom code block to an iterable list
 """
 def convert_to_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('convert_to_list() called')
-    
+
     template = """%%
 {0}
 %%"""
@@ -231,7 +229,7 @@ Creates new compromised_credential artifacts for each user found. Starts the act
 """
 def launch_reset_playbook(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('launch_reset_playbook() called')
-    
+
     filtered_results_data_1 = phantom.collect2(container=container, datapath=['filtered-data:get_active_ad_users:condition_1:get_affected_ad_users:action_result.data.*.samaccountname'])
     filtered_results_item_1_0 = [item[0] for item in filtered_results_data_1]
 
@@ -240,17 +238,20 @@ def launch_reset_playbook(action=None, success=None, container=None, results=Non
     ################################################################################
 
     for r in filtered_results_item_1_0:
-        phantom.debug("[DEBUG]: account = {}".format(r))
-        phantom.add_artifact(container=container,
-                             raw_data={'compromisedUserName':r},
-                             cef_data={'compromisedUserName':r},
-                             label='compromised_account',
-                             name='compromised account ' + r,
-                             identifier=None,
-                             artifact_type='user name',
-                             severity='high',
-                             run_automation=True)
-        
+        phantom.debug(f"[DEBUG]: account = {r}")
+        phantom.add_artifact(
+            container=container,
+            raw_data={'compromisedUserName': r},
+            cef_data={'compromisedUserName': r},
+            label='compromised_account',
+            name=f'compromised account {r}',
+            identifier=None,
+            artifact_type='user name',
+            severity='high',
+            run_automation=True,
+        )
+
+
         # calling the playbook here is necessary because artifacts are not evaluated while
         # this code block runs. Consequently, all artifacts are fired as a list instead of
         # individually without this next call to playbook().

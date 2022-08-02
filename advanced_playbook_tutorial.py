@@ -22,16 +22,16 @@ def file_reputation_1(action=None, success=None, container=None, results=None, h
     # collect data for 'file_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.fileHash', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'hash': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'hash': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="file reputation", parameters=parameters, assets=['reversinglabs'], callback=filter_1, name="file_reputation_1")
 
@@ -87,16 +87,17 @@ Check if the machine hostname is on a list used to track test machines.
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress", "not in", "custom_list:test_machines"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress",
+                "not in",
+                "custom_list:test_machines",
+            ],
+        ],
+    ):
         set_severity_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -117,27 +118,27 @@ Kill the malicious process on the endpoint with the file name from the artifact.
 """
 def terminate_process_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('terminate_process_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'terminate_process_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.fileName', 'filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'terminate_process_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0] and filtered_artifacts_item_1[1]:
-            parameters.append({
-                'name': filtered_artifacts_item_1[0],
-                'sensor': "example_sensor",
-                'ip_hostname': filtered_artifacts_item_1[1],
-                'action_group': "example_group",
-                'package_name': "example_package",
-                'timeout_seconds': 60,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[2]},
-            })
+    parameters = [
+        {
+            'name': filtered_artifacts_item_1[0],
+            'sensor': "example_sensor",
+            'ip_hostname': filtered_artifacts_item_1[1],
+            'action_group': "example_group",
+            'package_name': "example_package",
+            'timeout_seconds': 60,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[2]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0] and filtered_artifacts_item_1[1]
+    ]
+
 
     phantom.act(action="terminate process", parameters=parameters, assets=['tanium'], name="terminate_process_1")
 
@@ -169,7 +170,7 @@ Ask an analyst if the IP address should be blocked.
 """
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Based on a SIEM event about a potential malware incident, Phantom has investigated and determined that the potential attacker IP address:  
@@ -211,16 +212,13 @@ Check the analyst response.
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         add_to_block_list(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -246,24 +244,24 @@ Create a new block rule on the firewall.
 """
 def block_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_ip_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_3:condition_1:artifact:*.cef.sourceAddress', 'filtered-data:filter_3:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_ip_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'vsys': "vsys1",
-                'is_source_address': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'vsys': "vsys1",
+            'is_source_address': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], callback=unblock_ip_1, name="block_ip_1")
 
@@ -274,24 +272,25 @@ After a time delay, unblock the IP address.
 """
 def unblock_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('unblock_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'unblock_ip_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['block_ip_1:action_result.parameter.ip', 'block_ip_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'unblock_ip_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'vsys': "vsys1",
-                'is_source_address': True,
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'vsys': "vsys1",
+            'is_source_address': True,
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
+
     # calculate start time using delay of 60 minutes
     start_time = datetime.now() + timedelta(minutes=60)
 
@@ -304,7 +303,7 @@ Use custom code to remove the IP address from a blocklist.
 """
 def remove_from_block_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('remove_from_block_list() called')
-    
+
     parameters = [{}]
 
     ################################################################################
@@ -313,10 +312,10 @@ def remove_from_block_list(action=None, success=None, container=None, results=No
 
     # collect list of ip addresses
     ips_to_remove = phantom.collect2(container=container, datapath=['unblock_ip_1:action_result.parameter.ip'], action_results=results)
-    
-    phantom.debug("ips to remove: {}".format(ips_to_remove))
+
+    phantom.debug(f"ips to remove: {ips_to_remove}")
     del_rows = set()
-    
+
     for ip in ips_to_remove:
         phantom.delete_from_list(list_name="blocked_ips", value=ip, column=0, remove_all=True, remove_row=True)
 

@@ -19,17 +19,17 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
     # collect data for 'domain_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationDnsDomain', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'domain': container_item[0],
-                'use_risk_api': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'domain': container_item[0],
+            'use_risk_api': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['domaintools'], callback=decision_2, name="domain_reputation_1")
 
@@ -38,16 +38,13 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["domain_reputation_1:action_result.data.*.risk_score", ">=", 80],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         prompt_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -57,7 +54,7 @@ def decision_2(action=None, success=None, container=None, results=None, handle=N
 
 def prompt_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('prompt_1() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Automation Engineer"
     message = """The risk score of {0} has been evaluated by DomainTools Domain Reputation as {1}, which exceeds the Playbook's defined threshold.  Would you like to block this domain?"""
@@ -89,16 +86,13 @@ def prompt_1(action=None, success=None, container=None, results=None, handle=Non
 def decision_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_3() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["prompt_1:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         block_domain_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -108,22 +102,23 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 
 def unblock_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('unblock_domain_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'unblock_domain_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['block_domain_1:action_result.parameter.domain', 'block_domain_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'unblock_domain_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'domain': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
+
     # calculate start time using delay of 60 minutes
     start_time = datetime.now() + timedelta(minutes=60)
 
@@ -133,23 +128,23 @@ def unblock_domain_1(action=None, success=None, container=None, results=None, ha
 
 def block_domain_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_domain_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_domain_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['domain_reputation_1:action_result.parameter.domain', 'domain_reputation_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'block_domain_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'domain': results_item_1[0],
-                'disable_safeguards': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': results_item_1[0],
+            'disable_safeguards': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="block domain", parameters=parameters, assets=['opendns_umbrella'], callback=unblock_domain_1, name="block_domain_1")
 

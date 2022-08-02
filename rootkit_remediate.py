@@ -18,42 +18,39 @@ def quarantine_device_1(action=None, success=None, container=None, results=None,
     # collect data for 'quarantine_device_1' call
     container_data = phantom.get_data("rkitdata", clear_data=True)
 
-    parameters = []
-    
-    # build parameters list for 'quarantine_device_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip_hostname': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
-
-    if parameters:
-        phantom.act("quarantine device", parameters=parameters, assets=['carbonblack'], callback=get_system_info_1, name="quarantine_device_1")    
+    if parameters := [
+        {
+            'ip_hostname': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]:
+        phantom.act("quarantine device", parameters=parameters, assets=['carbonblack'], callback=get_system_info_1, name="quarantine_device_1")
     else:
         phantom.error("'quarantine_device_1' will not be executed due to lack of parameters")
-    
+
     return
 
 def get_system_info_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_system_info_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_system_info_1' call
     inputs_data_1 = phantom.collect2(container=container, datapath=['quarantine_device_1:artifact:*.cef.sourceAddress', 'quarantine_device_1:artifact:*.id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_system_info_1' call
-    for inputs_item_1 in inputs_data_1:
-        if inputs_item_1[0]:
-            parameters.append({
-                'ip_hostname': inputs_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': inputs_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip_hostname': inputs_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': inputs_item_1[1]},
+        }
+        for inputs_item_1 in inputs_data_1
+        if inputs_item_1[0]
+    ]
+
 
     phantom.act(action="get system info", parameters=parameters, assets=['vmwarevsphere'], callback=filter_1, name="get_system_info_1", parent_action=action)
 
@@ -93,23 +90,23 @@ def filter_1(action=None, success=None, container=None, results=None, handle=Non
 
 def get_system_info_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_system_info_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_system_info_2' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["get_system_info_1:filtered-action_result.data.*.ip", "get_system_info_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'get_system_info_2' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'namespace': "",
-                'ip_hostname': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'namespace': "",
+            'ip_hostname': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="get system info", parameters=parameters, assets=['domainctrl1'], callback=disable_user_1, name="get_system_info_2")
 
@@ -117,25 +114,25 @@ def get_system_info_2(action=None, success=None, container=None, results=None, h
 
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'fields': "",
-        'summary': "Machine was identified with a rootkit.",
-        'assignee': "",
-        'priority': "High",
-        'vault_id': "",
-        'issue_type': "",
-        'description': "Machine was discovered by phantom to have a rootkit.  See Phantom for more information.",
-        'project_key': "REIMAGE",
-        'assignee_account_id': "",
-    })
+    parameters = [
+        {
+            'fields': "",
+            'summary': "Machine was identified with a rootkit.",
+            'assignee': "",
+            'priority': "High",
+            'vault_id': "",
+            'issue_type': "",
+            'description': "Machine was discovered by phantom to have a rootkit.  See Phantom for more information.",
+            'project_key': "REIMAGE",
+            'assignee_account_id': "",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['jira'], callback=send_email_2, name="create_ticket_1")
 
@@ -154,23 +151,23 @@ def join_create_ticket_1(action=None, success=None, container=None, results=None
 
 def terminate_process_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('terminate_process_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'terminate_process_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["get_system_info_1:filtered-action_result.data.*.vm_hostname", "get_system_info_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'terminate_process_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        parameters.append({
+    parameters = [
+        {
             'pid': "",
             'sensor_id': "",
             'ip_hostname': passed_filtered_results_item_1[0],
             # context (artifact id) is added to associate results with the artifact
             'context': {'artifact_id': passed_filtered_results_item_1[1]},
-        })
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+    ]
+
 
     phantom.act(action="terminate process", parameters=parameters, assets=['carbonblack'], callback=join_create_ticket_1, name="terminate_process_1")
 
@@ -178,22 +175,22 @@ def terminate_process_1(action=None, success=None, container=None, results=None,
 
 def disable_user_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('disable_user_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'disable_user_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_system_info_2:action_result.data.*.system_details.PrimaryOwnerName', 'get_system_info_2:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'disable_user_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'username': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="disable user", parameters=parameters, assets=['domainctrl1'], callback=join_create_ticket_1, name="disable_user_1", parent_action=action)
 
@@ -201,22 +198,22 @@ def disable_user_1(action=None, success=None, container=None, results=None, hand
 
 def unquarantine_device_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('unquarantine_device_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'unquarantine_device_1' call
     inputs_data_1 = phantom.collect2(container=container, datapath=['revert_vm_1:artifact:*.cef.sourceAddress', 'revert_vm_1:artifact:*.id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'unquarantine_device_1' call
-    for inputs_item_1 in inputs_data_1:
-        if inputs_item_1[0]:
-            parameters.append({
-                'ip_hostname': inputs_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': inputs_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip_hostname': inputs_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': inputs_item_1[1]},
+        }
+        for inputs_item_1 in inputs_data_1
+        if inputs_item_1[0]
+    ]
+
 
     phantom.act(action="unquarantine device", parameters=parameters, assets=['carbonblack'], callback=send_email_reverted, name="unquarantine_device_1", parent_action=action)
 
@@ -224,24 +221,24 @@ def unquarantine_device_1(action=None, success=None, container=None, results=Non
 
 def send_email_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_2' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_2' call
-    parameters.append({
-        'cc': "",
-        'to': "",
-        'bcc': "",
-        'body': "",
-        'from': "",
-        'headers': "",
-        'subject': "",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "",
+            'bcc': "",
+            'body': "",
+            'from': "",
+            'headers': "",
+            'subject': "",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="send_email_2", parent_action=action)
 
@@ -249,24 +246,24 @@ def send_email_2(action=None, success=None, container=None, results=None, handle
 
 def send_email_reverted(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_reverted() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_reverted' call
 
-    parameters = []
-    
-    # build parameters list for 'send_email_reverted' call
-    parameters.append({
-        'cc': "",
-        'to': "test@phantom.us",
-        'bcc': "",
-        'body': "A rootkit was discovered on a device, which was then reverted to an earlier VM snapshot.  See Phantom for more details.",
-        'from': "admin@phantom.us",
-        'headers': "",
-        'subject': "Rootkit was remediated",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "test@phantom.us",
+            'bcc': "",
+            'body': "A rootkit was discovered on a device, which was then reverted to an earlier VM snapshot.  See Phantom for more details.",
+            'from': "admin@phantom.us",
+            'headers': "",
+            'subject': "Rootkit was remediated",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="send_email_reverted", parent_action=action)
 
@@ -274,23 +271,23 @@ def send_email_reverted(action=None, success=None, container=None, results=None,
 
 def revert_vm_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('revert_vm_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'revert_vm_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["get_system_info_1:filtered-action_result.data.*.vmx_path", "get_system_info_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'revert_vm_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'snapshot': "",
-                'vmx_path': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'snapshot': "",
+            'vmx_path': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="revert vm", parameters=parameters, assets=['vmwarevsphere'], callback=unquarantine_device_1, name="revert_vm_1")
 

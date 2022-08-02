@@ -15,11 +15,7 @@ This playbook is deigned to perform the investigative and potential containment 
 """
 
 def asset_configured(action):
-    assets = phantom.get_assets(action=action)
-    if assets:
-        return True
-    
-    return False
+    return bool(assets := phantom.get_assets(action=action))
 
 def escalate(container):
     phantom.set_severity(container, "high")
@@ -29,55 +25,51 @@ def deescalate(container):
     phantom.close(container)
     
 def deescalate_close_notify(container):
-    
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'deescalate_close_notify' call
 
     container_id = container['id']
     phantom.deescalate(container)
-    
-    parameters = []
-    
-    # build parameters list for 'deescalate_close_notify' call
-    parameters.append({
-        'from': "",
-        'to': "root@localhost",
-        'subject': "Descalating and Closing Container ID: " + container['id'],
-        'body': "The c2 investigate and contain playbook on the Phantom platform has completed and will be closing the container." +
-                "Information about the container is as follows: \n Container ID: " + container['id'] + "\nContainer Label: " + container['label'] + "\nContainer Severity: " + container['severity'],
-        'attachments': "",
-    })
 
-    if parameters:
-        phantom.act("send email", parameters=parameters, assets=['smtp'], name="deescalate_close_notify")    
+    if parameters := [
+        {
+            'from': "",
+            'to': "root@localhost",
+            'subject': "Descalating and Closing Container ID: "
+            + container['id'],
+            'body': "The c2 investigate and contain playbook on the Phantom platform has completed and will be closing the container."
+            + "Information about the container is as follows: \n Container ID: "
+            + container['id']
+            + "\nContainer Label: "
+            + container['label']
+            + "\nContainer Severity: "
+            + container['severity'],
+            'attachments': "",
+        }
+    ]:
+        phantom.act("send email", parameters=parameters, assets=['smtp'], name="deescalate_close_notify")
     else:
         phantom.error("'deescalate_close_notify' will not be executed due to lack of parameters")
-    
+
     return
 
 def escalate_close_notify(container):
-    
-    #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
-    # collect data for 'escalate_close_notify' call
 
-    parameters = []
-    
-    # build parameters list for 'escalate_close_notify' call
-    parameters.append({
-        'body': "asdf",
-        'to': "root@localhost",
-        'from': "",
-        'attachments': "",
-        'subject': "Escalating and closing",
-    })
-
-    if parameters:
-        phantom.act("send email", parameters=parameters, assets=['smtp'], name="escalate_close_notify")    
+    if parameters := [
+        {
+            'body': "asdf",
+            'to': "root@localhost",
+            'from': "",
+            'attachments': "",
+            'subject': "Escalating and closing",
+        }
+    ]:
+        phantom.act("send email", parameters=parameters, assets=['smtp'], name="escalate_close_notify")
     else:
         phantom.error("'escalate_close_notify' will not be executed due to lack of parameters")
-    
+
     return
 
 # End - Global Code block
@@ -109,16 +101,16 @@ def whois_ip_1(action=None, success=None, container=None, results=None, handle=N
     # collect data for 'whois_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], name="whois_ip_1")
 
@@ -130,16 +122,16 @@ def geolocate_ip_1(action=None, success=None, container=None, results=None, hand
     # collect data for 'geolocate_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=join_filter_4, name="geolocate_ip_1")
 
@@ -163,26 +155,28 @@ def deescalate_close_container(action=None, success=None, container=None, result
 
 def terminate_process_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('terminate_process_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'terminate_process_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['find_malware_1:action_result.data.*.pid', 'find_malware_1:action_result.parameter.context.artifact_id'], action_results=results)
     results_data_2 = phantom.collect2(container=container, datapath=['snapshot_vm_1:action_result.data.*.host', 'snapshot_vm_1:action_result.parameter.context.artifact_id'], action_results=results)
 
     parameters = []
-    
+
     # build parameters list for 'terminate_process_1' call
     for results_item_1 in results_data_1:
-        for results_item_2 in results_data_2:
-            if results_item_1[0]:
-                parameters.append({
-                    'pid': results_item_1[0],
-                    'sensor_id': "",
-                    'ip_hostname': results_item_2[0],
-                    # context (artifact id) is added to associate results with the artifact
-                    'context': {'artifact_id': results_item_1[1]},
-                })
+        parameters.extend(
+            {
+                'pid': results_item_1[0],
+                'sensor_id': "",
+                'ip_hostname': results_item_2[0],
+                # context (artifact id) is added to associate results with the artifact
+                'context': {'artifact_id': results_item_1[1]},
+            }
+            for results_item_2 in results_data_2
+            if results_item_1[0]
+        )
 
     phantom.act(action="terminate process", parameters=parameters, assets=['carbonblack'], callback=escalate_close_container2, name="terminate_process_1", parent_action=action)
 
@@ -235,23 +229,23 @@ def list_vms_1(action=None, success=None, container=None, results=None, handle=N
 
 def find_malware_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('find_malware_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'find_malware_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['snapshot_vm_1:action_result.data.*.vault_id', 'snapshot_vm_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'find_malware_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'profile': "",
-                'vault_id': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'profile': "",
+            'vault_id': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="find malware", parameters=parameters, assets=['volatility'], callback=filter_5, name="find_malware_1", parent_action=action)
 
@@ -277,20 +271,20 @@ def filter_6(action=None, success=None, container=None, results=None, handle=Non
 
 def block_hash_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_hash_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_hash_1' call
     passed_filtered_artifact_data = phantom.collect2(container=container, datapath=['filtered-artifact:*.cef.fileHash', 'filtered-artifact:*.id'], filter_artifacts=filtered_artifacts)
 
-    parameters = []
-    
-    # build parameters list for 'block_hash_1' call
-    for passed_filtered_artifact_item in passed_filtered_artifact_data:
-        parameters.append({
+    parameters = [
+        {
             'hash': passed_filtered_artifact_item[0],
             'comment': "",
-        })
+        }
+        for passed_filtered_artifact_item in passed_filtered_artifact_data
+    ]
+
 
     phantom.act(action="block hash", parameters=parameters, assets=['carbonblack'], callback=terminate_process_1, name="block_hash_1")
 
@@ -310,17 +304,17 @@ def hunt_ip_1(action=None, success=None, container=None, results=None, handle=No
     # collect data for 'hunt_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                'scope': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            'scope': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="hunt ip", parameters=parameters, assets=['autofocus'], name="hunt_ip_1")
 
@@ -332,16 +326,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['opendns_investigate'], callback=join_filter_4, name="ip_reputation_1")
 
@@ -395,24 +389,24 @@ def join_filter_4(action=None, success=None, container=None, results=None, handl
 
 def block_ip_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_ip_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                'vsys': "",
-                'is_source_address': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            'vsys': "",
+            'is_source_address': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], callback=escalate_close_container_2, name="block_ip_1")
 
@@ -420,23 +414,23 @@ def block_ip_1(action=None, success=None, container=None, results=None, handle=N
 
 def snapshot_vm_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('snapshot_vm_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'snapshot_vm_1' call
     passed_filtered_results_data_1 = phantom.collect2(container=container, datapath=["list_vms_1:filtered-action_result.data.*.vmx_path", "list_vms_1:filtered-action_result.parameter.context.artifact_id"], action_results=filtered_results)
 
-    parameters = []
-    
-    # build parameters list for 'snapshot_vm_1' call
-    for passed_filtered_results_item_1 in passed_filtered_results_data_1:
-        if passed_filtered_results_item_1[0]:
-            parameters.append({
-                'download': "",
-                'vmx_path': passed_filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': passed_filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'download': "",
+            'vmx_path': passed_filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': passed_filtered_results_item_1[1]},
+        }
+        for passed_filtered_results_item_1 in passed_filtered_results_data_1
+        if passed_filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="snapshot vm", parameters=parameters, assets=['vmwarevsphere'], callback=find_malware_1, name="snapshot_vm_1")
 
@@ -467,10 +461,6 @@ def filter_5(action=None, success=None, container=None, results=None, handle=Non
         ],
         name="filter_5:condition_2")
 
-    # call connected blocks if filtered artifacts or results
-    if matched_artifacts_2 or matched_results_2:
-        pass
-
     # collect filtered artifact ids for 'if' condition 3
     matched_artifacts_3, matched_results_3 = phantom.condition(
         container=container,
@@ -488,27 +478,29 @@ def filter_5(action=None, success=None, container=None, results=None, handle=Non
 
 def get_process_file_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_process_file_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_process_file_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['find_malware_1:action_result.data.*.pid', 'find_malware_1:action_result.parameter.context.artifact_id'], action_results=results)
     results_data_2 = phantom.collect2(container=container, datapath=['snapshot_vm_1:action_result.summary.vol_profile_used', 'snapshot_vm_1:action_result.data.*.vault_id', 'snapshot_vm_1:action_result.parameter.context.artifact_id'], action_results=results)
 
     parameters = []
-    
+
     # build parameters list for 'get_process_file_1' call
     for results_item_1 in results_data_1:
-        for results_item_2 in results_data_2:
-            if results_item_1[0] and results_item_2[1]:
-                parameters.append({
-                    'ph': "",
-                    'pid': results_item_1[0],
-                    'profile': results_item_2[0],
-                    'vault_id': results_item_2[1],
-                    # context (artifact id) is added to associate results with the artifact
-                    'context': {'artifact_id': results_item_1[1]},
-                })
+        parameters.extend(
+            {
+                'ph': "",
+                'pid': results_item_1[0],
+                'profile': results_item_2[0],
+                'vault_id': results_item_2[1],
+                # context (artifact id) is added to associate results with the artifact
+                'context': {'artifact_id': results_item_1[1]},
+            }
+            for results_item_2 in results_data_2
+            if results_item_1[0] and results_item_2[1]
+        )
 
     phantom.act(action="get process file", parameters=parameters, assets=['volatility'], callback=detonate_file_3, name="get_process_file_1")
 
@@ -516,27 +508,27 @@ def get_process_file_1(action=None, success=None, container=None, results=None, 
 
 def detonate_file_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('detonate_file_3() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'detonate_file_3' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_process_file_1:action_result.data.*.vault_id', 'get_process_file_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'detonate_file_3' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'vm': "",
-                'private': "",
-                'playbook': "",
-                'vault_id': results_item_1[0],
-                'file_name': "",
-                'force_analysis': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'vm': "",
+            'private': "",
+            'playbook': "",
+            'vault_id': results_item_1[0],
+            'file_name': "",
+            'force_analysis': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="detonate file", parameters=parameters, assets=['threatgrid'], callback=join_filter_2, name="detonate_file_3", parent_action=action)
 
@@ -603,22 +595,23 @@ def join_filter_2(action=None, success=None, container=None, results=None, handl
 
 def get_report_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_report_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_report_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['detonate_file_3:action_result.summary.id', 'detonate_file_3:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_report_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'id': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'id': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
+
     # calculate start time using delay of 10 minutes
     start_time = datetime.now() + timedelta(minutes=10)
 

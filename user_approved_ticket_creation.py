@@ -16,15 +16,12 @@ def on_start(container):
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         conditions=[
             ["artifact:*.cef.sourceAddress", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         endpoint_infection_ticket_approval(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -53,7 +50,7 @@ def join_set_status_2(action=None, success=None, container=None, results=None, h
 
 def endpoint_infection_ticket_approval(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('endpoint_infection_ticket_approval() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "Incident Commander"
     message = """Endpoint at {0} has been deemed infected.  Would you like to create a ticket to contain this infection?"""
@@ -84,16 +81,17 @@ def endpoint_infection_ticket_approval(action=None, success=None, container=None
 def decision_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_2() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["endpoint_infection_ticket_approval:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "endpoint_infection_ticket_approval:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         filter_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -135,20 +133,20 @@ def filter_1(action=None, success=None, container=None, results=None, handle=Non
 
 def add_list_item(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('add_list_item() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'add_list_item' call
     formatted_data_1 = phantom.get_format_data(name='format_list_item')
 
-    parameters = []
-    
-    # build parameters list for 'add_list_item' call
-    parameters.append({
-        'list': "infected_endpoints",
-        'new_row': formatted_data_1,
-        'create': True,
-    })
+    parameters = [
+        {
+            'list': "infected_endpoints",
+            'new_row': formatted_data_1,
+            'create': True,
+        }
+    ]
+
 
     phantom.act(action="add listitem", parameters=parameters, assets=['phantom'], callback=join_set_status_2, name="add_list_item")
 
@@ -156,7 +154,7 @@ def add_list_item(action=None, success=None, container=None, results=None, handl
 
 def format_list_item(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_list_item() called')
-    
+
     template = """[\"{0}\"]"""
 
     # parameter list for template variable replacement
@@ -172,19 +170,16 @@ def format_list_item(action=None, success=None, container=None, results=None, ha
 
 def create_infected_ticket(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_infected_ticket() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_infected_ticket' call
     formatted_data_1 = phantom.get_format_data(name='initial_endpoint_infection')
 
-    parameters = []
-    
-    # build parameters list for 'create_infected_ticket' call
-    parameters.append({
-        'name': formatted_data_1,
-        'parent_group': "All Cases/All Cases",
-    })
+    parameters = [
+        {'name': formatted_data_1, 'parent_group': "All Cases/All Cases"}
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['arcsight_esm'], callback=format_list_item, name="create_infected_ticket")
 
@@ -192,19 +187,16 @@ def create_infected_ticket(action=None, success=None, container=None, results=No
 
 def create_reinfected_ticket(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_reinfected_ticket() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_reinfected_ticket' call
     formatted_data_1 = phantom.get_format_data(name='reinfected_endpoint')
 
-    parameters = []
-    
-    # build parameters list for 'create_reinfected_ticket' call
-    parameters.append({
-        'name': formatted_data_1,
-        'parent_group': "All Cases/All Cases",
-    })
+    parameters = [
+        {'name': formatted_data_1, 'parent_group': "All Cases/All Cases"}
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['arcsight_esm'], callback=join_set_status_2, name="create_reinfected_ticket")
 
@@ -215,7 +207,7 @@ Format ticket name for initial endpoint infection.
 """
 def initial_endpoint_infection(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('initial_endpoint_infection() called')
-    
+
     template = """Contain Endpoint At {0}"""
 
     # parameter list for template variable replacement
@@ -234,7 +226,7 @@ Format ticket name for reinfected endpoint.
 """
 def reinfected_endpoint(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('reinfected_endpoint() called')
-    
+
     template = """Contain Reinfected Endpoint At {0}"""
 
     # parameter list for template variable replacement

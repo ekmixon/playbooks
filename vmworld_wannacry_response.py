@@ -33,7 +33,7 @@ Prompt the incident response team before quarantining devices.
 """
 def should_quarantine_devices_prompt(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('should_quarantine_devices_prompt() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """The following host has automatically had a block port rule deployed to it in response to a potential WannaCry sighting: 
@@ -90,23 +90,23 @@ Take a snapshot of each affected virtual machine to attempt to save data from en
 """
 def snapshot_vm_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('snapshot_vm_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'snapshot_vm_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_1:condition_1:vsphere_list_vms:action_result.data.*.vmx_path", "filtered-data:filter_1:condition_1:vsphere_list_vms:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'snapshot_vm_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'download': "",
-                'vmx_path': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'download': "",
+            'vmx_path': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="snapshot vm", parameters=parameters, assets=['vmwarevsphere'], name="snapshot_vm_1")
 
@@ -121,16 +121,16 @@ def NSX_block_port(action=None, success=None, container=None, results=None, hand
     # collect data for 'NSX_block_port' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.sourceAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'NSX_block_port' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['vmwarensx'], callback=should_quarantine_devices_prompt, name="NSX_block_port")
 
@@ -141,22 +141,22 @@ Use a ticketing system to request further investigation of the ransomware alert.
 """
 def create_ticket_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_1' call
     formatted_data_1 = phantom.get_format_data(name='format_ticket')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_1' call
-    parameters.append({
-        'table': "incident",
-        'fields': "",
-        'vault_id': "",
-        'description': formatted_data_1,
-        'short_description': "Wanna Cry Endpoints Affected - No Quarantine",
-    })
+    parameters = [
+        {
+            'table': "incident",
+            'fields': "",
+            'vault_id': "",
+            'description': formatted_data_1,
+            'short_description': "Wanna Cry Endpoints Affected - No Quarantine",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['servicenow'], name="create_ticket_1")
 
@@ -167,22 +167,22 @@ Isolate the devices from the rest of the network to prevent malware propagation.
 """
 def quarantine_device_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('quarantine_device_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'quarantine_device_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['NSX_block_port:action_result.parameter.ip', 'NSX_block_port:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'quarantine_device_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip_hostname': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip_hostname': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="quarantine device", parameters=parameters, assets=['carbonblack'], name="quarantine_device_1")
 
@@ -194,16 +194,17 @@ Check the yes or no response from the prompt.
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["should_quarantine_devices_prompt:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "should_quarantine_devices_prompt:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         quarantine_device_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -217,7 +218,7 @@ Format a message to create a ticket if the devices are not being quarantined.
 """
 def format_ticket(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_ticket() called')
-    
+
     template = """The following endpoints were affected:
 {0}
 

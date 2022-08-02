@@ -13,18 +13,19 @@ def string_split(input_string=None, delimiter=None, strip_whitespace=None, **kwa
     ############################ Custom Code Goes Below This Line #################################
     import json
     import phantom.rules as phantom
-    
+
     if not delimiter:
         delimiter = ","
-    
+
     # strip_whitespace defaults to True, but if any value besides "True" is provided, it will be set to False
-    if strip_whitespace == "True" or strip_whitespace == True or strip_whitespace == None:
-        strip_whitespace = True
-    else:
-        strip_whitespace = False
-    
+    strip_whitespace = (
+        strip_whitespace == "True"
+        or strip_whitespace == True
+        or strip_whitespace is None
+    )
+
     output_list = input_string.split(delimiter)
-    
+
     outputs = []
     for item in output_list:
         if strip_whitespace:

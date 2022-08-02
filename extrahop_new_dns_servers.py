@@ -24,13 +24,7 @@ def get_devices_1(action=None, success=None, container=None, results=None, handl
 
     # collect data for 'get_devices_1' call
 
-    parameters = []
-    
-    # build parameters list for 'get_devices_1' call
-    parameters.append({
-        'minutes': 30,
-        'activity_type': "dns_server",
-    })
+    parameters = [{'minutes': 30, 'activity_type': "dns_server"}]
 
     phantom.act(action="get devices", parameters=parameters, assets=['extrahop'], callback=decision_1, name="get_devices_1")
 
@@ -42,16 +36,13 @@ Only initiate a scan on returned devices that have an IP Address
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["get_devices_1:action_result.data.*.ipaddr4", "!=", ""],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         get_device_info_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         list_nessus_policies(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
@@ -63,22 +54,22 @@ Get more details about an ExtraHop device given its IP address. Details include 
 """
 def get_device_info_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_device_info_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_device_info_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_devices_1:action_result.data.*.ipaddr4', 'get_devices_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_device_info_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get device info", parameters=parameters, assets=['extrahop'], callback=get_device_info_1_callback, name="get_device_info_1")
 
@@ -97,24 +88,24 @@ Retrieves a list of all of the protocols that a device communicated over the las
 """
 def get_protocols_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_protocols_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_protocols_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_device_info_1:action_result.data.*.ipaddr4', 'get_device_info_1:action_result.data.*.id', 'get_device_info_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_protocols_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'minutes': 30,
-                'eh_api_id': results_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'minutes': 30,
+            'eh_api_id': results_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get protocols", parameters=parameters, assets=['extrahop'], name="get_protocols_1", parent_action=action)
 
@@ -125,26 +116,26 @@ Retrieves a list of all of the peers that a device communicated with in the last
 """
 def get_peers_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_peers_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_peers_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_device_info_1:action_result.data.*.ipaddr4', 'get_device_info_1:action_result.data.*.id', 'get_device_info_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'get_peers_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'minutes': 30,
-                'protocol': "any",
-                'eh_api_id': results_item_1[1],
-                'peer_role': "any",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[2]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'minutes': 30,
+            'protocol': "any",
+            'eh_api_id': results_item_1[1],
+            'peer_role': "any",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[2]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="get peers", parameters=parameters, assets=['extrahop'], name="get_peers_1", parent_action=action)
 
@@ -155,25 +146,27 @@ Initiate a Nessus scan on the new dns server
 """
 def scan_endpoint_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('scan_endpoint_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'scan_endpoint_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_devices_1:action_result.data.*.ipaddr4', 'get_devices_1:action_result.parameter.context.artifact_id'], action_results=results)
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:Nessus_Policy_Name:condition_1:list_nessus_policies:action_result.data.*.id", "filtered-data:Nessus_Policy_Name:condition_1:list_nessus_policies:action_result.parameter.context.artifact_id"])
 
     parameters = []
-    
+
     # build parameters list for 'scan_endpoint_1' call
     for results_item_1 in results_data_1:
-        for filtered_results_item_1 in filtered_results_data_1:
-            if filtered_results_item_1[0] and results_item_1[0]:
-                parameters.append({
-                    'policy_id': filtered_results_item_1[0],
-                    'target_to_scan': results_item_1[0],
-                    # context (artifact id) is added to associate results with the artifact
-                    'context': {'artifact_id': filtered_results_item_1[1]},
-                })
+        parameters.extend(
+            {
+                'policy_id': filtered_results_item_1[0],
+                'target_to_scan': results_item_1[0],
+                # context (artifact id) is added to associate results with the artifact
+                'context': {'artifact_id': filtered_results_item_1[1]},
+            }
+            for filtered_results_item_1 in filtered_results_data_1
+            if filtered_results_item_1[0] and results_item_1[0]
+        )
 
     phantom.act(action="scan endpoint", parameters=parameters, assets=['nessus scanner'], name="scan_endpoint_1")
 

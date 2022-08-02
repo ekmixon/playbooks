@@ -21,15 +21,17 @@ Use a regular expression to extract all email addresses from the full text of th
 """
 def extract_email_domains(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('extract_email_domains() called')
-    
+
     custom_function_result_0 = phantom.collect2(container=container, datapath=['get_full_event_text:custom_function_result.data.*.item'], action_results=results )
 
-    parameters = []
-
-    for item0 in custom_function_result_0:
-        parameters.append({
+    parameters = [
+        {
             'input_string': item0[0],
-        })
+        }
+        for item0 in custom_function_result_0
+    ]
+
+
     ################################################################################
     ## Custom Code Start
     ################################################################################
@@ -74,16 +76,16 @@ def artifact_domain_rep(action=None, success=None, container=None, results=None,
     # collect data for 'artifact_domain_rep' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:extracted_domains:condition_1:artifact:*.cef.destinationDnsDomain', 'filtered-data:extracted_domains:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'artifact_domain_rep' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['umbrella_investigate'], callback=artifact_non_malicious, name="artifact_domain_rep")
 
@@ -94,20 +96,20 @@ Using the domain portion of the extracted emails, gather the reputation of those
 """
 def email_domain_rep(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('email_domain_rep() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'email_domain_rep' call
     custom_function_results_data_1 = phantom.collect2(container=container, datapath=['extract_email_domains:custom_function_result.data.*.domain'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'email_domain_rep' call
-    for custom_function_results_item_1 in custom_function_results_data_1:
-        if custom_function_results_item_1[0]:
-            parameters.append({
-                'domain': custom_function_results_item_1[0],
-            })
+    parameters = [
+        {
+            'domain': custom_function_results_item_1[0],
+        }
+        for custom_function_results_item_1 in custom_function_results_data_1
+        if custom_function_results_item_1[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['umbrella_investigate'], callback=extracted_non_malicious, name="email_domain_rep")
 
@@ -118,28 +120,33 @@ Fetch the full text of the event, including all the artifacts.
 """
 def get_full_event_text(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_full_event_text() called')
-    
-    parameters = []
 
-    parameters.append({
-        'input_1': None,
-        'input_2': None,
-        'input_3': None,
-        'input_4': None,
-        'input_5': None,
-        'input_6': None,
-        'input_7': None,
-        'input_8': None,
-        'input_9': None,
-        'input_10': None,
-    })
+    parameters = [
+        {
+            'input_1': None,
+            'input_2': None,
+            'input_3': None,
+            'input_4': None,
+            'input_5': None,
+            'input_6': None,
+            'input_7': None,
+            'input_8': None,
+            'input_9': None,
+            'input_10': None,
+        }
+    ]
+
+
     ################################################################################
     ## Custom Code Start
     ################################################################################
 
-    container_url = phantom.build_phantom_rest_url('/container/{}'.format(container['id']))
-    artifact_url = phantom.build_phantom_rest_url('/container/{}/artifacts'.format(container['id']))
-                                                   
+    container_url = phantom.build_phantom_rest_url(f"/container/{container['id']}")
+    artifact_url = phantom.build_phantom_rest_url(
+        f"/container/{container['id']}/artifacts"
+    )
+
+
     container_and_artifacts = phantom.requests.get(container_url, verify=False).text + phantom.requests.get(artifact_url, verify=False).text
     parameters[0]['input_1'] = container_and_artifacts
 
@@ -178,7 +185,7 @@ Construct a note with the domain reputation results.
 """
 def format_email_note(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_email_note() called')
-    
+
     template = """The following domains were extracted from email addresses in the event and queried in Cisco Umbrella Investigate:
 
 | Domain | Status | Risk Score | Category |
@@ -227,7 +234,7 @@ Construct a note with the domain reputation results.
 """
 def format_artifact_note(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_artifact_note() called')
-    
+
     template = """The following domains were present in artifacts in the event and queried in Cisco Umbrella Investigate:
 
 | Domain | Status | Risk Score | Category |

@@ -29,25 +29,25 @@ def on_start(container):
 
 def block_url_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_url_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_url_2' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_8:condition_1:src_ip_reputation_VT:action_result.data.*.detected_urls.*.urldata.*.detected_urls.*.url", "filtered-data:filter_8:condition_1:src_ip_reputation_VT:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'block_url_2' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'ph': "",
-                'url': filtered_results_item_1[0],
-                'vsys': "",
-                'sec_policy': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ph': "",
+            'url': filtered_results_item_1[0],
+            'vsys': "",
+            'sec_policy': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="block url", parameters=parameters, assets=['pan'], name="block_url_2", parent_action=action)
 
@@ -101,24 +101,24 @@ def filter_6(action=None, success=None, container=None, results=None, handle=Non
 
 def block_src_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_src_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_src_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_2:artifact:*.cef.sourceAddress', 'filtered-data:filter_1:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_src_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'vsys': "",
-                'is_source_address': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'vsys': "",
+            'is_source_address': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], name="block_src_ip")
 
@@ -248,24 +248,24 @@ def filter_8(action=None, success=None, container=None, results=None, handle=Non
 
 def create_URL_ioc_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_URL_ioc_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_URL_ioc_2' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_8:condition_1:src_ip_reputation_VT:action_result.data.*.detected_urls.*.urldata.*.detected_urls.*.urldata.*.detected_urls.*.urldata.*.detected_urls.*.url", "filtered-data:filter_8:condition_1:src_ip_reputation_VT:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'create_URL_ioc_2' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'indicator': filtered_results_item_1[0],
-                'indicator_type': "URL",
-                'indicator_status': "Review",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'indicator': filtered_results_item_1[0],
+            'indicator_type': "URL",
+            'indicator_status': "Review",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="create ioc", parameters=parameters, assets=['threatq'], callback=block_url_2, name="create_URL_ioc_2")
 
@@ -273,24 +273,24 @@ def create_URL_ioc_2(action=None, success=None, container=None, results=None, ha
 
 def block_dst_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_dst_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_dst_ip' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'block_dst_ip' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'vsys': "",
-                'is_source_address': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'vsys': "",
+            'is_source_address': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], name="block_dst_ip")
 
@@ -298,25 +298,25 @@ def block_dst_ip(action=None, success=None, container=None, results=None, handle
 
 def block_url_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_url_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_url_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['dst_ip_reputation_VT:action_result.data.*.detected_urls.*.url', 'dst_ip_reputation_VT:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'block_url_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ph': "",
-                'url': results_item_1[0],
-                'vsys': "",
-                'sec_policy': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ph': "",
+            'url': results_item_1[0],
+            'vsys': "",
+            'sec_policy': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="block url", parameters=parameters, assets=['pan'], name="block_url_1", parent_action=action)
 
@@ -328,16 +328,16 @@ def src_ip_reputation_TQ(action=None, success=None, container=None, results=None
     # collect data for 'src_ip_reputation_TQ' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_2:artifact:*.cef.sourceAddress', 'filtered-data:filter_1:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'src_ip_reputation_TQ' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'query': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'query': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['threatq'], callback=filter_3, name="src_ip_reputation_TQ")
 
@@ -346,16 +346,17 @@ def src_ip_reputation_TQ(action=None, success=None, container=None, results=None
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["dst_ip_reputation_VT:action_result.data.*.detected_urls.*.positives", ">=", 1],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "dst_ip_reputation_VT:action_result.data.*.detected_urls.*.positives",
+                ">=",
+                1,
+            ],
+        ],
+    ):
         create_URL_ioc_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -363,22 +364,22 @@ def decision_1(action=None, success=None, container=None, results=None, handle=N
 
 def dst_ip_reputation_VT(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('dst_ip_reputation_VT() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'dst_ip_reputation_VT' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'dst_ip_reputation_VT' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], callback=decision_1, name="dst_ip_reputation_VT")
 
@@ -386,22 +387,22 @@ def dst_ip_reputation_VT(action=None, success=None, container=None, results=None
 
 def src_ip_reputation_VT(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('src_ip_reputation_VT() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'src_ip_reputation_VT' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_2:artifact:*.cef.sourceAddress', 'filtered-data:filter_1:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'src_ip_reputation_VT' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], callback=filter_8, name="src_ip_reputation_VT")
 
@@ -409,24 +410,24 @@ def src_ip_reputation_VT(action=None, success=None, container=None, results=None
 
 def create_src_IP_ioc(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_src_IP_ioc() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_src_IP_ioc' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_2:artifact:*.cef.sourceAddress', 'filtered-data:filter_1:condition_2:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'create_src_IP_ioc' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'indicator': filtered_artifacts_item_1[0],
-                'indicator_type': "IP Address",
-                'indicator_status': "Review",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'indicator': filtered_artifacts_item_1[0],
+            'indicator_type': "IP Address",
+            'indicator_status': "Review",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="create ioc", parameters=parameters, assets=['threatq'], name="create_src_IP_ioc")
 
@@ -447,16 +448,16 @@ def upload_file_2(action=None, success=None, container=None, results=None, handl
     # collect data for 'upload_file_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.vaultId', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'upload_file_2' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'vault_id': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'vault_id': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="upload file", parameters=parameters, assets=['threatq'], name="upload_file_2")
 
@@ -464,24 +465,24 @@ def upload_file_2(action=None, success=None, container=None, results=None, handl
 
 def create_URL_ioc_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_URL_ioc_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_URL_ioc_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['dst_ip_reputation_VT:action_result.data.*.detected_urls.*.url', 'dst_ip_reputation_VT:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'create_URL_ioc_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'indicator': results_item_1[0],
-                'indicator_type': "URL",
-                'indicator_status': "Review",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'indicator': results_item_1[0],
+            'indicator_type': "URL",
+            'indicator_status': "Review",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="create ioc", parameters=parameters, assets=['threatq'], callback=block_url_1, name="create_URL_ioc_1")
 
@@ -489,24 +490,24 @@ def create_URL_ioc_1(action=None, success=None, container=None, results=None, ha
 
 def create_dst_IP_ioc(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_dst_IP_ioc() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_dst_IP_ioc' call
     inputs_data_1 = phantom.collect2(container=container, datapath=['dst_ip_reputation_TQ:artifact:*.cef.sourceAddress', 'dst_ip_reputation_TQ:artifact:*.id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'create_dst_IP_ioc' call
-    for inputs_item_1 in inputs_data_1:
-        if inputs_item_1[0]:
-            parameters.append({
-                'indicator': inputs_item_1[0],
-                'indicator_type': "IP Address",
-                'indicator_status': "Review",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': inputs_item_1[1]},
-            })
+    parameters = [
+        {
+            'indicator': inputs_item_1[0],
+            'indicator_type': "IP Address",
+            'indicator_status': "Review",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': inputs_item_1[1]},
+        }
+        for inputs_item_1 in inputs_data_1
+        if inputs_item_1[0]
+    ]
+
 
     phantom.act(action="create ioc", parameters=parameters, assets=['threatq'], name="create_dst_IP_ioc")
 
@@ -518,16 +519,16 @@ def dst_ip_reputation_TQ(action=None, success=None, container=None, results=None
     # collect data for 'dst_ip_reputation_TQ' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'dst_ip_reputation_TQ' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'query': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'query': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['threatq'], callback=filter_2, name="dst_ip_reputation_TQ")
 

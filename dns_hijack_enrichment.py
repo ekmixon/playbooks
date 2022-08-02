@@ -42,22 +42,22 @@ WHOIS lookup on the IP address
 """
 def whois_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('whois_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'whois_ip' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_ip:action_result.parameter.ip', 'geolocate_ip:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], callback=whois_ip_callback, name="whois_ip", parent_action=action)
 
@@ -88,7 +88,7 @@ Format a selection of the most relevant results from the executed enrichment que
 """
 def format_results(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_results() called')
-    
+
     template = """GeoIP Results: {0}
 Whois Information: {1}
 SSL Certificate From IP Details
@@ -139,19 +139,19 @@ def domain_reputation_2(action=None, success=None, container=None, results=None,
     # collect data for 'domain_reputation_2' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_query:condition_1:artifact:*.cef.query', 'filtered-data:filter_query:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_reputation_2' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ph': "",
-                'to': "",
-                'from': "",
-                'domain': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ph': "",
+            'to': "",
+            'from': "",
+            'domain': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['passivetotal'], callback=join_format_results, name="domain_reputation_2")
 
@@ -166,17 +166,17 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
     # collect data for 'domain_reputation_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_query:condition_1:artifact:*.cef.query', 'filtered-data:filter_query:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'domain_reputation_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'domain': filtered_artifacts_item_1[0],
-                'include_inactive': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'domain': filtered_artifacts_item_1[0],
+            'include_inactive': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="domain reputation", parameters=parameters, assets=['malware_domain_list'], callback=join_format_results, name="domain_reputation_1")
 
@@ -187,25 +187,25 @@ Gather reputation information about the IP from PassiveTotal
 """
 def ip_reputation_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ip_reputation_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ip_reputation_2' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_ip:action_result.parameter.ip', 'geolocate_ip:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_2' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                'ph': "",
-                'to': "",
-                'from': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            'ph': "",
+            'to': "",
+            'from': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['passivetotal'], callback=join_format_results, name="ip_reputation_2", parent_action=action)
 
@@ -220,16 +220,16 @@ def geolocate_ip(action=None, success=None, container=None, results=None, handle
     # collect data for 'geolocate_ip' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.current_answer', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], callback=whois_ip, name="geolocate_ip")
 
@@ -260,22 +260,22 @@ Censys lookup of the IP address to get the TLS certificate and other information
 """
 def censys_lookup_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('censys_lookup_ip() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'censys_lookup_ip' call
     results_data_1 = phantom.collect2(container=container, datapath=['geolocate_ip:action_result.parameter.ip', 'geolocate_ip:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'censys_lookup_ip' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'ip': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="lookup ip", parameters=parameters, assets=['censys'], callback=filter_tls_certificate, name="censys_lookup_ip", parent_action=action)
 
@@ -286,22 +286,22 @@ Gather the issuer and other information about the detected TLS certificates
 """
 def lookup_certificate_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('lookup_certificate_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'lookup_certificate_1' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_tls_certificate:condition_1:censys_lookup_ip:action_result.data.*.ports.443.https.tls.certificate.parsed.fingerprint_sha256", "filtered-data:filter_tls_certificate:condition_1:censys_lookup_ip:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_certificate_1' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'sha256': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'sha256': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="lookup certificate", parameters=parameters, assets=['censys'], callback=join_format_results, name="lookup_certificate_1")
 
@@ -333,7 +333,7 @@ Format a selection of the most relevant results from the executed enrichment que
 """
 def format_notable_comment(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_notable_comment() called')
-    
+
     template = """Phantom gathered enrichment of this Notable Event, all of which can be viewed here: {0}
 
 The most relevant fields from the enrichment are below:
@@ -356,29 +356,29 @@ Updating the notable event in Splunk with the enrichment data
 """
 def update_notable_event(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('update_notable_event() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'update_notable_event' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.event_id', 'artifact:*.id'])
     formatted_data_1 = phantom.get_format_data(name='format_notable_comment')
 
-    parameters = []
-    
-    # build parameters list for 'update_notable_event' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'owner': "",
-                'status': "",
-                'comment': formatted_data_1,
-                'urgency': "",
-                'event_ids': container_item[0],
-                'integer_status': "",
-                'wait_for_confirmation': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'owner': "",
+            'status': "",
+            'comment': formatted_data_1,
+            'urgency': "",
+            'event_ids': container_item[0],
+            'integer_status': "",
+            'wait_for_confirmation': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="update event", parameters=parameters, assets=['splunk_es'], name="update_notable_event")
 

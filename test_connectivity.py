@@ -7,9 +7,6 @@ import json
 
 def get_report_cb(action, success, incident, results, handle):
 
-    if not success:
-        return
-
     return
 
 def on_start(incident):
@@ -21,6 +18,6 @@ def on_start(incident):
 
 def on_finish(incident, summary):
 
-    phantom.debug("Summary: " + summary)
+    phantom.debug(f"Summary: {summary}")
 
     return

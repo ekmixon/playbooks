@@ -48,16 +48,16 @@ def url_reputation_1(action=None, success=None, container=None, results=None, ha
     # collect data for 'url_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.requestURL', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'url_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'url': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'url': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="url reputation", parameters=parameters, assets=['phishtank'], callback=phishtank_filter, name="url_reputation_1")
 
@@ -107,17 +107,17 @@ def lookup_domain_2(action=None, success=None, container=None, results=None, han
     # collect data for 'lookup_domain_2' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationDnsDomain', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_domain_2' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'type': "",
-                'domain': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'type': "",
+            'domain': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="lookup domain", parameters=parameters, assets=['google_dns'], name="lookup_domain_2")
 
@@ -132,16 +132,16 @@ def lookup_ip_1(action=None, success=None, container=None, results=None, handle=
     # collect data for 'lookup_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'lookup_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="lookup ip", parameters=parameters, assets=['google_dns'], name="lookup_ip_1")
 
@@ -156,16 +156,16 @@ def geolocate_ip_1(action=None, success=None, container=None, results=None, hand
     # collect data for 'geolocate_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], name="geolocate_ip_1")
 
@@ -180,16 +180,16 @@ def whois_ip_1(action=None, success=None, container=None, results=None, handle=N
     # collect data for 'whois_ip_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], name="whois_ip_1")
 

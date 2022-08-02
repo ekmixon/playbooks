@@ -111,7 +111,7 @@ def collect_by_cef_type(container=None, data_types=None, tags=None, **kwargs):
         container_id = container
     else:
         raise TypeError("The input 'container' is neither a container dictionary nor an int, so it cannot be used")
-    
+
     # validate the data_types input
     if not data_types or not isinstance(data_types, str):
         raise ValueError("The input 'data_types' must exist and must be a string")
@@ -121,14 +121,12 @@ def collect_by_cef_type(container=None, data_types=None, tags=None, **kwargs):
     # else it must be a single data type
     else:
         data_types = [data_types]
-    
+
     # split tags if it contains commas or use as-is
     if not tags:
         tags = []
-    # if tags has a comma, split it and treat it as a list
-    elif tags and "," in tags:
+    elif "," in tags:
         tags = [item.strip() for item in tags.split(",")]
-    # if there is no comma, treat it as a single tag
     else:
         tags = [tags]
 
@@ -147,9 +145,8 @@ def collect_by_cef_type(container=None, data_types=None, tags=None, **kwargs):
     outputs = []
     for artifact in artifacts:
         # if any tags are provided, make sure each provided tag is in the artifact's tags
-        if tags:
-            if not set(tags).issubset(set(artifact['tags'])):
-                continue
+        if tags and not set(tags).issubset(set(artifact['tags'])):
+            continue
         # "all" is a special value to collect every value from every artifact
         if data_types == ['all']:
             for cef_key in artifact['cef']:
@@ -157,21 +154,24 @@ def collect_by_cef_type(container=None, data_types=None, tags=None, **kwargs):
                 if new_output not in outputs:
                     outputs.append(new_output)
             continue
-        
-        
+
+
         # cef data types can also be explicitly included in artifact metadata, so also make a temporary lookup dictionary for each artifact and append the cef_types from that artifact
         artifact_field_names = field_names.copy()
         for field in artifact['cef_types']:
-            for data_type in data_types:
-                if data_type in artifact['cef_types'][field]:
-                    artifact_field_names.append(field)
+            artifact_field_names.extend(
+                field
+                for data_type in data_types
+                if data_type in artifact['cef_types'][field]
+            )
+
         for field_name in artifact_field_names:
             if field_name in artifact['cef']:
                 new_output = {'artifact_value': artifact['cef'][field_name], 'artifact_id': artifact['id']}
                 if new_output not in outputs:
                     outputs.append(new_output)
 
-    phantom.debug("collect_by_cef_type output:\n{}".format(outputs))
+    phantom.debug(f"collect_by_cef_type output:\n{outputs}")
 
     # Return a JSON-serializable object
     assert json.dumps(outputs)  # Will raise an exception if the :outputs: object is not JSON-serializable

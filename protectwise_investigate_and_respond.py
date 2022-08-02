@@ -57,16 +57,16 @@ def whois_ip_1(action=None, success=None, container=None, results=None, handle=N
     # collect data for 'whois_ip_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'whois_ip_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="whois ip", parameters=parameters, assets=['whois'], name="whois_ip_1")
 
@@ -78,18 +78,18 @@ def get_pcap_1(action=None, success=None, container=None, results=None, handle=N
     # collect data for 'get_pcap_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.observationId', 'filtered-data:filter_2:condition_1:artifact:*.cef.sensorId', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'get_pcap_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'id': filtered_artifacts_item_1[0],
-                'type': "Observation",
-                'sensorid': filtered_artifacts_item_1[1],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[2]},
-            })
+    parameters = [
+        {
+            'id': filtered_artifacts_item_1[0],
+            'type': "Observation",
+            'sensorid': filtered_artifacts_item_1[1],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[2]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="get pcap", parameters=parameters, assets=['protectwise'], name="get_pcap_1")
 
@@ -101,16 +101,16 @@ def geolocate_ip_1(action=None, success=None, container=None, results=None, hand
     # collect data for 'geolocate_ip_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'geolocate_ip_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="geolocate ip", parameters=parameters, assets=['maxmind'], name="geolocate_ip_1")
 
@@ -157,23 +157,23 @@ def filter_4(action=None, success=None, container=None, results=None, handle=Non
 
 def block_hash_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_hash_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_hash_1' call
     results_data_1 = phantom.collect2(container=container, datapath=['file_reputation_1:action_result.parameter.hash', 'file_reputation_1:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'block_hash_1' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'hash': results_item_1[0],
-                'comment': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': results_item_1[0],
+            'comment': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="block hash", parameters=parameters, assets=['carbonblack'], callback=severity_high, name="block_hash_1")
 
@@ -185,19 +185,19 @@ def hunt_ip_1(action=None, success=None, container=None, results=None, handle=No
     # collect data for 'hunt_ip_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'hunt_ip_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                'ph': "",
-                'end_time': "",
-                'start_time': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            'ph': "",
+            'end_time': "",
+            'start_time': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="hunt ip", parameters=parameters, assets=['protectwise'], callback=filter_4, name="hunt_ip_1")
 
@@ -221,24 +221,24 @@ def resolve(action=None, success=None, container=None, results=None, handle=None
 
 def block_ip_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('block_ip_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'block_ip_2' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_4:condition_1:hunt_ip_1:action_result.parameter.ip", "filtered-data:filter_4:condition_1:hunt_ip_1:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'block_ip_2' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'ip': filtered_results_item_1[0],
-                'vsys': "vsys1",
-                'is_source_address': "",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_results_item_1[0],
+            'vsys': "vsys1",
+            'is_source_address': "",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="block ip", parameters=parameters, assets=['pan'], callback=block_ip_2_callback, name="block_ip_2")
 
@@ -254,26 +254,26 @@ def block_ip_2_callback(action=None, success=None, container=None, results=None,
 
 def create_ticket_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('create_ticket_2() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'create_ticket_2' call
     formatted_data_1 = phantom.get_format_data(name='format_1')
 
-    parameters = []
-    
-    # build parameters list for 'create_ticket_2' call
-    parameters.append({
-        'fields': "",
-        'summary': formatted_data_1,
-        'assignee': "",
-        'priority': "",
-        'vault_id': "",
-        'issue_type': "",
-        'description': "",
-        'project_key': "AP",
-        'assignee_account_id': "",
-    })
+    parameters = [
+        {
+            'fields': "",
+            'summary': formatted_data_1,
+            'assignee': "",
+            'priority': "",
+            'vault_id': "",
+            'issue_type': "",
+            'description': "",
+            'project_key': "AP",
+            'assignee_account_id': "",
+        }
+    ]
+
 
     phantom.act(action="create ticket", parameters=parameters, assets=['jira'], name="create_ticket_2")
 
@@ -296,16 +296,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_2:condition_1:artifact:*.cef.destinationAddress', 'filtered-data:filter_2:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'ip': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'ip': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['virustotal'], name="ip_reputation_1")
 
@@ -317,16 +317,16 @@ def file_reputation_1(action=None, success=None, container=None, results=None, h
     # collect data for 'file_reputation_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.fileHash', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'file_reputation_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'hash': filtered_artifacts_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'hash': filtered_artifacts_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="file reputation", parameters=parameters, assets=['virustotal'], callback=filter_3, name="file_reputation_1")
 
@@ -334,7 +334,7 @@ def file_reputation_1(action=None, success=None, container=None, results=None, h
 
 def format_2(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_2() called')
-    
+
     template = """Follow-up will be required for the block rules on the following IP addresses:
 {0}"""
 
@@ -351,7 +351,7 @@ def format_2(action=None, success=None, container=None, results=None, handle=Non
 
 def format_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_1() called')
-    
+
     template = """Deployed Block IP: {0}"""
 
     # parameter list for template variable replacement
@@ -367,25 +367,25 @@ def format_1(action=None, success=None, container=None, results=None, handle=Non
 
 def notify_status(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('notify_status() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'notify_status' call
     formatted_data_1 = phantom.get_format_data(name='format_3')
 
-    parameters = []
-    
-    # build parameters list for 'notify_status' call
-    parameters.append({
-        'cc': "",
-        'to': "demo.phantom@gmail.com",
-        'bcc': "",
-        'body': "The container has been closed.",
-        'from': "local@localhost",
-        'headers': "",
-        'subject': formatted_data_1,
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "demo.phantom@gmail.com",
+            'bcc': "",
+            'body': "The container has been closed.",
+            'from': "local@localhost",
+            'headers': "",
+            'subject': formatted_data_1,
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="notify_status")
 
@@ -393,7 +393,7 @@ def notify_status(action=None, success=None, container=None, results=None, handl
 
 def format_3(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_3() called')
-    
+
     template = """Phantom Notification - Deploying Block Hash for container ID:  {0}"""
 
     # parameter list for template variable replacement

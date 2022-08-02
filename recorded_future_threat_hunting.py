@@ -19,16 +19,13 @@ Proceed if the risk score is higher than a certain threshold
 def risk_score_threshold(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('risk_score_threshold() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
             ["ip_reputation_1:action_result.data.*.risk.score", ">=", 90],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        ],
+    ):
         ip_intelligence_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -39,7 +36,7 @@ Build a Splunk query to turn a list of related entities from Recorded Future int
 """
 def format_related_ip_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_related_ip_lookup() called')
-    
+
     template = """| makeresults | eval IP=\"{0}\" | makemv IP delim=\", \" | mvexpand IP | appendcols [| makeresults | eval RC=\"{1}\" | makemv RC delim=\", \" | mvexpand RC ] | outputlookup huntip.csv"""
 
     # parameter list for template variable replacement
@@ -59,21 +56,21 @@ Run the Splunk query that creates the lookup file
 """
 def build_ip_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('build_ip_lookup() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'build_ip_lookup' call
     formatted_data_1 = phantom.get_format_data(name='format_related_ip_lookup')
 
-    parameters = []
-    
-    # build parameters list for 'build_ip_lookup' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=search_splunk_for_ips, name="build_ip_lookup")
 
@@ -84,20 +81,20 @@ Search Palo Alto Networks firewall logs for any events with threat-related ip ad
 """
 def search_splunk_for_ips(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('search_splunk_for_ips() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'search_splunk_for_ips' call
 
-    parameters = []
-    
-    # build parameters list for 'search_splunk_for_ips' call
-    parameters.append({
-        'query': "sourcetype=pan:t* ((earliest=-1d latest=now)) |eval IP=dest_ip | lookup huntip.csv IP OUTPUT RC | search RC>10",
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': "sourcetype=pan:t* ((earliest=-1d latest=now)) |eval IP=dest_ip | lookup huntip.csv IP OUTPUT RC | search RC>10",
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=search_splunk_for_ips_callback, name="search_splunk_for_ips", parent_action=action)
 
@@ -116,7 +113,7 @@ Ask an analyst whether the discovered related IP addresses should be blocked
 """
 def recorded_future_threat_hunting_block_ip(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('recorded_future_threat_hunting_block_ip() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """Do you want to add the following IP(s) to the block IP block list:
@@ -151,16 +148,17 @@ Only proceed if the analyst approved the prompt
 def check_prompt(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('check_prompt() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["recorded_future_threat_hunting_block_ip:action_result.summary.response", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "recorded_future_threat_hunting_block_ip:action_result.summary.response",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         add_ip_to_block_list(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -186,8 +184,7 @@ If any of the Splunk searches had any results, send an email to an analyst
 def Send_email_if_related_entities_are_found(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('Send_email_if_related_entities_are_found() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
@@ -196,10 +193,8 @@ def Send_email_if_related_entities_are_found(action=None, success=None, containe
             ["search_splunk_for_files:action_result.data.*.RC", ">", 0],
             ["search_splunk_for_vulns:action_result.data.*.Rc", ">", 0],
         ],
-        logical_operator='or')
-
-    # call connected blocks if condition 1 matched
-    if matched:
+        logical_operator='or',
+    ):
         format_email(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 
@@ -221,7 +216,7 @@ Include the intelligence context and Splunk results in the email and link to the
 """
 def format_email(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_email() called')
-    
+
     template = """The potentially malicious destination IP {0} with a Risk Score of {1} was identified and process by the Phantom playbook \"recorded_future_threat_hunting\".
 
 Additional searches performed against various logs showed that the following related entities occurring in > 10  relations have been found in recent events:
@@ -255,25 +250,25 @@ Send the formatted email to a hard-coded recipient
 """
 def send_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('send_email_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'send_email_1' call
     formatted_data_1 = phantom.get_format_data(name='format_email')
 
-    parameters = []
-    
-    # build parameters list for 'send_email_1' call
-    parameters.append({
-        'cc': "",
-        'to': "recipient@example.com",
-        'bcc': "",
-        'body': formatted_data_1,
-        'from': "sender@example.com",
-        'headers': "",
-        'subject': "Malicous IP with related entities found in Splunk",
-        'attachments': "",
-    })
+    parameters = [
+        {
+            'cc': "",
+            'to': "recipient@example.com",
+            'bcc': "",
+            'body': formatted_data_1,
+            'from': "sender@example.com",
+            'headers': "",
+            'subject': "Malicous IP with related entities found in Splunk",
+            'attachments': "",
+        }
+    ]
+
 
     phantom.act(action="send email", parameters=parameters, assets=['smtp'], name="send_email_1")
 
@@ -284,7 +279,7 @@ Build a Splunk query to turn a list of related entities from Recorded Future int
 """
 def format_related_domain_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_related_domain_lookup() called')
-    
+
     template = """| makeresults | eval domain=\"{0}\" | makemv domain delim=\", \" | mvexpand domain | appendcols [| makeresults | eval RC=\"{1}\" | makemv RC delim=\", \" | mvexpand RC ] | outputlookup huntdomain.csv"""
 
     # parameter list for template variable replacement
@@ -304,21 +299,21 @@ Run the Splunk query that creates the lookup file
 """
 def build_domain_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('build_domain_lookup() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'build_domain_lookup' call
     formatted_data_1 = phantom.get_format_data(name='format_related_domain_lookup')
 
-    parameters = []
-    
-    # build parameters list for 'build_domain_lookup' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=search_splunk_for_domains, name="build_domain_lookup")
 
@@ -329,7 +324,7 @@ Build a Splunk query to turn a list of related entities from Recorded Future int
 """
 def format_related_hash_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_related_hash_lookup() called')
-    
+
     template = """| makeresults | eval hash=\"{0}\" | makemv hash delim=\", \" | mvexpand hash | appendcols [| makeresults | eval RC=\"{1}\" | makemv RC delim=\", \" | mvexpand RC ] | outputlookup hunthash.csv"""
 
     # parameter list for template variable replacement
@@ -349,21 +344,21 @@ Run the Splunk query that creates the lookup file
 """
 def build_hash_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('build_hash_lookup() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'build_hash_lookup' call
     formatted_data_1 = phantom.get_format_data(name='format_related_hash_lookup')
 
-    parameters = []
-    
-    # build parameters list for 'build_hash_lookup' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=search_splunk_for_files, name="build_hash_lookup")
 
@@ -374,7 +369,7 @@ Build a Splunk query to turn a list of related entities from Recorded Future int
 """
 def format_related_vuln_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('format_related_vuln_lookup() called')
-    
+
     template = """| makeresults | eval vuln=\"{0}\" | makemv vuln delim=\", \" | mvexpand vuln | appendcols [| makeresults | eval RC=\"{1}\" | makemv RC delim=\", \" | mvexpand RC ] | outputlookup huntvuln.csv"""
 
     # parameter list for template variable replacement
@@ -394,21 +389,21 @@ Run the Splunk query that creates the lookup file
 """
 def build_vuln_lookup(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('build_vuln_lookup() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'build_vuln_lookup' call
     formatted_data_1 = phantom.get_format_data(name='format_related_vuln_lookup')
 
-    parameters = []
-    
-    # build parameters list for 'build_vuln_lookup' call
-    parameters.append({
-        'query': formatted_data_1,
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': formatted_data_1,
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=search_splunk_for_vulns, name="build_vuln_lookup")
 
@@ -419,20 +414,20 @@ Search Palo Alto Networks threat logs for any events with threat-related domain 
 """
 def search_splunk_for_domains(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('search_splunk_for_domains() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'search_splunk_for_domains' call
 
-    parameters = []
-    
-    # build parameters list for 'search_splunk_for_domains' call
-    parameters.append({
-        'query': "sourcetype=pan:threat ((earliest=-1d latest=now)) |eval domain=dest_hostname | lookup huntdomain.csv domain OUTPUT RC | search RC>10",
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': "sourcetype=pan:threat ((earliest=-1d latest=now)) |eval domain=dest_hostname | lookup huntdomain.csv domain OUTPUT RC | search RC>10",
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_Send_email_if_related_entities_are_found, name="search_splunk_for_domains", parent_action=action)
 
@@ -443,20 +438,20 @@ Search Symantec Endpoint Protection logs for sightings of threat-related file ha
 """
 def search_splunk_for_files(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('search_splunk_for_files() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'search_splunk_for_files' call
 
-    parameters = []
-    
-    # build parameters list for 'search_splunk_for_files' call
-    parameters.append({
-        'query': "index=main sourcetype=symantec:ep:risk:file ((earliest=-1d latest=now)) |eval hash=file_hash | lookup hunthash.csv hash OUTPUT RC | search RC>10",
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': "index=main sourcetype=symantec:ep:risk:file ((earliest=-1d latest=now)) |eval hash=file_hash | lookup hunthash.csv hash OUTPUT RC | search RC>10",
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_Send_email_if_related_entities_are_found, name="search_splunk_for_files", parent_action=action)
 
@@ -467,20 +462,20 @@ Search Tenable vulnerability scanning logs for any vulnerabilities related to th
 """
 def search_splunk_for_vulns(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('search_splunk_for_vulns() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'search_splunk_for_vulns' call
 
-    parameters = []
-    
-    # build parameters list for 'search_splunk_for_vulns' call
-    parameters.append({
-        'query': "index=main sourcetype=\"tenable:sc:vuln\" ((earliest=-7d latest=now)) |eval vuln=cve | lookup huntvuln.csv vuln OUTPUT RC | search RC>10",
-        'command': "",
-        'display': "",
-        'parse_only': "",
-    })
+    parameters = [
+        {
+            'query': "index=main sourcetype=\"tenable:sc:vuln\" ((earliest=-7d latest=now)) |eval vuln=cve | lookup huntvuln.csv vuln OUTPUT RC | search RC>10",
+            'command': "",
+            'display': "",
+            'parse_only': "",
+        }
+    ]
+
 
     phantom.act(action="run query", parameters=parameters, assets=['splunk'], callback=join_Send_email_if_related_entities_are_found, name="search_splunk_for_vulns", parent_action=action)
 
@@ -491,22 +486,22 @@ Query for the full context about the IP address and related entities from Record
 """
 def ip_intelligence_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('ip_intelligence_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'ip_intelligence_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_intelligence_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip intelligence", parameters=parameters, assets=['recorded_future'], callback=Entity_Type_Filter, name="ip_intelligence_1")
 
@@ -581,16 +576,16 @@ def ip_reputation_1(action=None, success=None, container=None, results=None, han
     # collect data for 'ip_reputation_1' call
     container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.destinationAddress', 'artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'ip_reputation_1' call
-    for container_item in container_data:
-        if container_item[0]:
-            parameters.append({
-                'ip': container_item[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': container_item[1]},
-            })
+    parameters = [
+        {
+            'ip': container_item[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': container_item[1]},
+        }
+        for container_item in container_data
+        if container_item[0]
+    ]
+
 
     phantom.act(action="ip reputation", parameters=parameters, assets=['recorded_future'], callback=risk_score_threshold, name="ip_reputation_1")
 

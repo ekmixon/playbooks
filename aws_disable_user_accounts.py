@@ -18,7 +18,7 @@ Prompt the analyst with a list of accounts to confirm the accounts should be dis
 """
 def aws_reset_inactive_user(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('aws_reset_inactive_user() called')
-    
+
     # set user and message variables for phantom.prompt call
     user = "admin"
     message = """The following AWS user(s) were found to be inactive:
@@ -77,23 +77,23 @@ Disable the accounts that were not in the allowlist.
 """
 def disable_user_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('disable_user_1() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'disable_user_1' call
     filtered_artifacts_data_1 = phantom.collect2(container=container, datapath=['filtered-data:filter_1:condition_1:artifact:*.cef.awsUserName', 'filtered-data:filter_1:condition_1:artifact:*.id'])
 
-    parameters = []
-    
-    # build parameters list for 'disable_user_1' call
-    for filtered_artifacts_item_1 in filtered_artifacts_data_1:
-        if filtered_artifacts_item_1[0]:
-            parameters.append({
-                'username': filtered_artifacts_item_1[0],
-                'disable_access_keys': "true",
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_artifacts_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': filtered_artifacts_item_1[0],
+            'disable_access_keys': "true",
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_artifacts_item_1[1]},
+        }
+        for filtered_artifacts_item_1 in filtered_artifacts_data_1
+        if filtered_artifacts_item_1[0]
+    ]
+
 
     phantom.act(action="disable user", parameters=parameters, assets=['aws_iam'], name="disable_user_1")
 
@@ -105,16 +105,17 @@ Only proceed if the analyst responds "Yes".
 def decision_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('decision_1() called')
 
-    # check for 'if' condition 1
-    matched = phantom.decision(
+    if matched := phantom.decision(
         container=container,
         action_results=results,
         conditions=[
-            ["aws_reset_inactive_user:action_result.summary.responses.0", "==", "Yes"],
-        ])
-
-    # call connected blocks if condition 1 matched
-    if matched:
+            [
+                "aws_reset_inactive_user:action_result.summary.responses.0",
+                "==",
+                "Yes",
+            ],
+        ],
+    ):
         disable_user_1(action=action, success=success, container=container, results=results, handle=handle, custom_function=custom_function)
         return
 

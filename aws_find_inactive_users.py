@@ -21,7 +21,7 @@ Calculate the time to compare against in the filter for unused accounts.
 """
 def calculate_start_time(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('calculate_start_time() called')
-    
+
     literal_values_0 = [
         [
             -90,
@@ -30,16 +30,18 @@ def calculate_start_time(action=None, success=None, container=None, results=None
         ],
     ]
 
-    parameters = []
-
-    for item0 in literal_values_0:
-        parameters.append({
+    parameters = [
+        {
             'input_datetime': None,
             'amount_to_modify': item0[0],
             'modification_unit': item0[1],
             'input_format_string': None,
             'output_format_string': item0[2],
-        })
+        }
+        for item0 in literal_values_0
+    ]
+
+
     ################################################################################
     ## Custom Code Start
     ################################################################################
@@ -94,30 +96,30 @@ Create an artifact in the parent event for each unused account that was found. T
 """
 def save_to_artifacts(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('save_to_artifacts() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'save_to_artifacts' call
     results_data_1 = phantom.collect2(container=container, datapath=['get_unused_account_info:action_result.parameter.username', 'get_unused_account_info:action_result.parameter.context.artifact_id'], action_results=results)
 
-    parameters = []
-    
-    # build parameters list for 'save_to_artifacts' call
-    for results_item_1 in results_data_1:
-        if results_item_1[0]:
-            parameters.append({
-                'name': "Unused AWS Account",
-                'label': "user",
-                'cef_name': "awsUserName",
-                'contains': "aws iam user name",
-                'cef_value': results_item_1[0],
-                'container_id': "",
-                'cef_dictionary': "",
-                'run_automation': False,
-                'source_data_identifier': results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': results_item_1[1]},
-            })
+    parameters = [
+        {
+            'name': "Unused AWS Account",
+            'label': "user",
+            'cef_name': "awsUserName",
+            'contains': "aws iam user name",
+            'cef_value': results_item_1[0],
+            'container_id': "",
+            'cef_dictionary': "",
+            'run_automation': False,
+            'source_data_identifier': results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': results_item_1[1]},
+        }
+        for results_item_1 in results_data_1
+        if results_item_1[0]
+    ]
+
 
     phantom.act(action="add artifact", parameters=parameters, assets=['phantom'], name="save_to_artifacts", parent_action=action)
 
@@ -131,13 +133,7 @@ def list_all_accounts(action=None, success=None, container=None, results=None, h
 
     # collect data for 'list_all_accounts' call
 
-    parameters = []
-    
-    # build parameters list for 'list_all_accounts' call
-    parameters.append({
-        'user_path': "/",
-        'group_name': "",
-    })
+    parameters = [{'user_path': "/", 'group_name': ""}]
 
     phantom.act(action="list users", parameters=parameters, assets=['aws_iam'], callback=join_filter_unused_and_not_none, name="list_all_accounts")
 
@@ -148,22 +144,22 @@ Use the "get user" action to gather more information about the unused accounts, 
 """
 def get_unused_account_info(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None, custom_function=None, **kwargs):
     phantom.debug('get_unused_account_info() called')
-        
+
     #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
-    
+
     # collect data for 'get_unused_account_info' call
     filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:filter_unused_and_not_none:condition_1:list_all_accounts:action_result.data.*.UserName", "filtered-data:filter_unused_and_not_none:condition_1:list_all_accounts:action_result.parameter.context.artifact_id"])
 
-    parameters = []
-    
-    # build parameters list for 'get_unused_account_info' call
-    for filtered_results_item_1 in filtered_results_data_1:
-        if filtered_results_item_1[0]:
-            parameters.append({
-                'username': filtered_results_item_1[0],
-                # context (artifact id) is added to associate results with the artifact
-                'context': {'artifact_id': filtered_results_item_1[1]},
-            })
+    parameters = [
+        {
+            'username': filtered_results_item_1[0],
+            # context (artifact id) is added to associate results with the artifact
+            'context': {'artifact_id': filtered_results_item_1[1]},
+        }
+        for filtered_results_item_1 in filtered_results_data_1
+        if filtered_results_item_1[0]
+    ]
+
 
     phantom.act(action="get user", parameters=parameters, assets=['aws_iam'], callback=save_to_artifacts, name="get_unused_account_info")
 
